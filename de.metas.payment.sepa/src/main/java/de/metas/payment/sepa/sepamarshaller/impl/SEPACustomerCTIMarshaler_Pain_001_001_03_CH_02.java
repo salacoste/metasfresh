@@ -1,5 +1,7 @@
 package de.metas.payment.sepa.sepamarshaller.impl;
 
+import static java.math.BigDecimal.ZERO;
+
 /*
  * #%L
  * de.metas.payment.sepa
@@ -28,11 +30,12 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,6 +56,10 @@ import org.adempiere.util.Services;
 import org.adempiere.util.jaxb.DynamicObjectFactory;
 import org.adempiere.util.time.SystemTime;
 import org.compiere.model.I_C_Location;
+import org.compiere.util.Util;
+import org.compiere.util.Util.ArrayKey;
+
+import com.google.common.annotations.VisibleForTesting;
 
 import de.metas.adempiere.model.I_C_BPartner_Location;
 import de.metas.i18n.IMsgBL;
@@ -93,7 +100,7 @@ import de.metas.payment.sepa.jaxb.sct.pain_001_001_03_ch_02.ServiceLevel8Choice;
 import de.metas.payment.sepa.jaxb.sct.pain_001_001_03_ch_02.StructuredRemittanceInformation7;
 import de.metas.payment.sepa.model.I_SEPA_Export;
 import de.metas.payment.sepa.model.I_SEPA_Export_Line;
-import de.metas.payment.sepa.sepamarshaller.ISEPAMarshaller;
+import lombok.NonNull;
 
 /**
  * Written according to "Schweizer Implementation Guidelines für Kunde-an-Bank-Meldungen für Überweisungen im Zahlungsverkehr", "Version 1.4/30.06.2013". There link is
@@ -115,7 +122,7 @@ import de.metas.payment.sepa.sepamarshaller.ISEPAMarshaller;
  * <p>
  * All other payment modes are <b>not</b> supported (or maybe just "incidentally", when I think of Zahlart 6).
  */
-public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMarshaller
+public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02
 {
 	public static final String REGEXP_STREET_AND_NUMER_SPLIT = "^([^0-9]+) ?([0-9]+.*$)?";
 
@@ -151,14 +158,12 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 		}
 	}
 
-	private void marshal(final Document xmlDocument, final OutputStream out)
+	private void marshal(
+			@NonNull final Document xmlDocument,
+			@NonNull final OutputStream out)
 	{
-		Check.assumeNotNull(xmlDocument, "xmlDocument not null");
-		Check.assumeNotNull(out, "out not null");
-
 		Writer xmlWriter;
 
-		//
 		// We force UTF-8 encoding.
 		try
 		{
@@ -187,12 +192,10 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 		}
 	}
 
-	@Override
-	public void marshal(final I_SEPA_Export sepaDocument, final OutputStream out)
+	public void marshal(
+			@NonNull final I_SEPA_Export sepaDocument,
+			@NonNull final OutputStream out)
 	{
-		Check.assumeNotNull(sepaDocument, "sepaDocument not null");
-		Check.assumeNotNull(out, "out not null");
-
 		try
 		{
 			final Document xmlDocument = createDocument(sepaDocument);
@@ -204,13 +207,14 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 		}
 	}
 
-	private Document createDocument(final I_SEPA_Export sepaDocument)
+	@VisibleForTesting
+	Document createDocument(@NonNull final I_SEPA_Export sepaDocument)
 	{
 		final Document document = new Document();
 
 		final CustomerCreditTransferInitiationV03CH creditTransferInitiation = new CustomerCreditTransferInitiationV03CH();
 		document.setCstmrCdtTrfInitn(creditTransferInitiation);
-		//
+
 		// Group Header
 		{
 			final GroupHeader32CH groupHeaderSCT = new GroupHeader32CH();
@@ -234,43 +238,50 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 			final PartyIdentification32CHNameAndId initgPty = new PartyIdentification32CHNameAndId();
 			initgPty.setNm(sepaDocument.getSEPA_CreditorIdentifier());
 			groupHeaderSCT.setInitgPty(initgPty);
-
 		}
 
-		//
 		// Payment Informations: create one PaymentInstructionInformationSDD for each line
-		final Iterator<I_SEPA_Export_Line> sepaDocumentLines = Services.get(ISEPADocumentDAO.class).retrieveLines(sepaDocument);
-		if (!sepaDocumentLines.hasNext())
+		final List<I_SEPA_Export_Line> sepaDocumentLines = Services.get(ISEPADocumentDAO.class).retrieveLines(sepaDocument);
+		if (sepaDocumentLines.isEmpty())
 		{
-			throw new AdempiereException("The given SEPA_Export record has no lines")
+			throw new AdempiereException("The given SEPA_Export record has no lines with active=Y and error=N")
 					.appendParametersToMessage()
 					.setParameter("SEPA_Export", sepaDocument);
 		}
 
-		while (sepaDocumentLines.hasNext())
+		final Map<ArrayKey, PaymentInstructionInformation3CH> currency2pmtInf = new HashMap<>();
+
+		int nbOfTxs = 0;
+
+		for (final I_SEPA_Export_Line sepaLine : sepaDocumentLines)
 		{
-			final I_SEPA_Export_Line line = sepaDocumentLines.next();
+			final PaymentInstructionInformation3CH pmtInf = currency2pmtInf
+					.computeIfAbsent(
+							createKey(sepaLine),
+							c -> createPmtInf(creditTransferInitiation, sepaDocument, sepaLine));
 
-			if (!line.isActive() || line.isError())
-			{
-				// Error on line. Don't create payment instruction information.
-				continue;
-			}
+			// Credit Transfer Transaction Information
+			final CreditTransferTransactionInformation10CH creditTransferTrxInfo = createCreditTransferTransactionInformation(pmtInf, sepaLine);
+			pmtInf.getCdtTrfTxInf().add(creditTransferTrxInfo);
 
-			final PaymentInstructionInformation3CH payInsInf = createPaymentInstructionInformation(creditTransferInitiation, sepaDocument, line);
-			Check.assumeNotNull(payInsInf, "Payment instruction not null");
+			final BigDecimal transactionAmount = creditTransferTrxInfo.getAmt().getInstdAmt().getValue();
+			pmtInf.setCtrlSum(pmtInf.getCtrlSum().add(transactionAmount));
 
-			creditTransferInitiation.getPmtInf().add(payInsInf);
+			nbOfTxs++;
+		}
+
+		for (final PaymentInstructionInformation3CH pmtInf : currency2pmtInf.values())
+		{
+			creditTransferInitiation.getPmtInf().add(pmtInf);
 
 			// Update GroupHeader's control amount
 			final BigDecimal groupHeaderCtrlAmt = creditTransferInitiation.getGrpHdr().getCtrlSum();
-			final BigDecimal groupHeaderCtrlAmtNew = groupHeaderCtrlAmt.add(payInsInf.getCtrlSum());
+			final BigDecimal groupHeaderCtrlAmtNew = groupHeaderCtrlAmt.add(pmtInf.getCtrlSum());
 			creditTransferInitiation.getGrpHdr().setCtrlSum(groupHeaderCtrlAmtNew);
 		}
-		//
+
 		// Number of transactions: The total number of direct debit transaction blocks in the message.
-		// NOTE: You can have only one direct debit transaction by payment information.
-		creditTransferInitiation.getGrpHdr().setNbOfTxs(String.valueOf(creditTransferInitiation.getPmtInf().size()));
+		creditTransferInitiation.getGrpHdr().setNbOfTxs(String.valueOf(nbOfTxs));
 
 		sepaDocument.setProcessed(creditTransferInitiation.getPmtInf().size() > 0);
 		InterfaceWrapperHelper.save(sepaDocument);
@@ -278,10 +289,25 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 
 	}
 
-	private PaymentInstructionInformation3CH createPaymentInstructionInformation(
-			final CustomerCreditTransferInitiationV03CH customerCreditTransferInitiation,
-			final I_SEPA_Export sepaHdr,
-			final I_SEPA_Export_Line line)
+	private ArrayKey createKey(@NonNull final I_SEPA_Export_Line sepaLine)
+	{
+		if (extractBatchFlag(sepaLine))
+		{
+			return ArrayKey.of(sepaLine.getC_Currency().getISO_Code());
+		}
+		return ArrayKey.of(sepaLine.getSEPA_Export_Line_ID());
+	}
+
+	private boolean extractBatchFlag(@NonNull final I_SEPA_Export_Line sepaLine)
+	{
+		final boolean batch = sepaLine.getSEPA_Export().isExportBatchBookings();
+		return batch;
+	}
+
+	private PaymentInstructionInformation3CH createPmtInf(
+			@NonNull final CustomerCreditTransferInitiationV03CH customerCreditTransferInitiation,
+			@NonNull final I_SEPA_Export sepaHdr,
+			@NonNull final I_SEPA_Export_Line sepaLine)
 	{
 		final PaymentInstructionInformation3CH pmtInf = new PaymentInstructionInformation3CH();
 
@@ -296,18 +322,13 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 		// Sets payment code - credit transfer.
 		pmtInf.setPmtMtd(PaymentMethod3Code.TRF);
 
-		// task 08354: set "Batch Booking" to false. What we want from the bank is a statement with one line per pmtInf. Even with batch booking = true, this should be the case
-		// (according to
-		// http://www.six-interbank-clearing.com/dam/downloads/de/standardization/iso/swiss-recommendations/implementation-guidelines-ct/standardization_isopayments_iso_20022_ch_implementation_guidelines_ct.pdf
-		// page 20)
-		// but it isn't! Therefore, we try it with setting this to false, to make our intent more clear and hopefully get our detailed statement.
-		pmtInf.setBtchBookg(Boolean.FALSE);
+		pmtInf.setBtchBookg(extractBatchFlag(sepaLine));
 
 		// Setting the control amount later.
-		pmtInf.setCtrlSum(null);
+		pmtInf.setCtrlSum(ZERO);
 
 		// zahlungsart
-		final String paymentMode = getPaymentType(line);
+		final String paymentMode = getPaymentType(sepaLine);
 
 		//
 		// Payment type information.
@@ -347,7 +368,7 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 			}
 		}
 
-		final Date dueDate = Services.get(ISEPADocumentBL.class).getDueDate(line);
+		final Date dueDate = Services.get(ISEPADocumentBL.class).getDueDate(sepaLine);
 		pmtInf.setReqdExctnDt(newXMLGregorianCalendar(dueDate));
 
 		//
@@ -366,7 +387,7 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 		{
 			final GenericAccountIdentification1CH othr = new GenericAccountIdentification1CH();
 			id.setOthr(othr);
-			othr.setId(line.getOtherAccountIdentification());
+			othr.setId(sepaLine.getOtherAccountIdentification());
 		}
 		else
 		{
@@ -386,21 +407,12 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 		// Charge Bearer Type
 		// Hard-coded value of SLEV.
 		pmtInf.setChrgBr(ChargeBearerType1Code.SLEV);
-
-		//
-		// Credit Transfer Transaction Information
-		{
-			final CreditTransferTransactionInformation10CH creditTransferTrxInfo = createCreditTransferTransactionInformation(pmtInf, line);
-			pmtInf.getCdtTrfTxInf().add(creditTransferTrxInfo);
-
-			pmtInf.setCtrlSum(creditTransferTrxInfo.getAmt().getInstdAmt().getValue());
-		}
-
 		return pmtInf;
 	}
 
-	private CreditTransferTransactionInformation10CH createCreditTransferTransactionInformation(final PaymentInstructionInformation3CH paymentInstruction,
-			final I_SEPA_Export_Line line)
+	private CreditTransferTransactionInformation10CH createCreditTransferTransactionInformation(
+			@NonNull final PaymentInstructionInformation3CH paymentInstruction,
+			@NonNull final I_SEPA_Export_Line line)
 	{
 		final CreditTransferTransactionInformation10CH cdtTrfTxInf = new CreditTransferTransactionInformation10CH();
 
@@ -523,15 +535,12 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 			final PartyIdentification32CHName cdtr = new PartyIdentification32CHName();
 			cdtTrfTxInf.setCdtr(cdtr);
 
-			;
-
 			// Note: since old age we use SEPA_MandateRefNo for the creditor's name (I don't remember why)
 			// task 09617: prefer C_BP_BankAccount.A_Name if available; keep SEPA_MandateRefNo, because setting it as "cdtr/name" might be a best practice
-			cdtr.setNm(
-					getFirstNonEmpty(
-							line.getSEPA_MandateRefNo(),
-							line.getC_BP_BankAccount().getA_Name(),
-							line.getC_BPartner().getName()));
+			cdtr.setNm(getFirstNonEmpty(
+					() -> line.getSEPA_MandateRefNo(),
+					() -> line.getC_BP_BankAccount().getA_Name(),
+					() -> line.getC_BPartner().getName()));
 
 			// task 08655: also provide the creditor's address
 			final Properties ctx = InterfaceWrapperHelper.getCtx(line);
@@ -611,36 +620,39 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 		return cdtTrfTxInf;
 	}
 
-	private String getFirstNonEmpty(final String... values)
+	@SafeVarargs
+	private final String getFirstNonEmpty(@NonNull final Supplier<String>... values)
 	{
-		for (final String value : values)
+		final String result = Util.firstValidValue(
+				s -> !Check.isEmpty(s, true),
+				values);
+
+		if (result != null)
 		{
-			if (!Check.isEmpty(value, true))
-			{
-				return value.trim();
-			}
+			return result.trim();
 		}
-		return null;
+		return result;
 	}
 
 	/**
 	 * @task 08655
 	 * @TODO: extract the core part into a general address-BL (also move the unit tests along); also handle the case of number-first (like e.g. in france)
 	 */
-	/* package */PostalAddress6CH createPstlAdr(final I_C_Location location)
+	private PostalAddress6CH createPstlAdr(final I_C_Location location)
 	{
 		final PostalAddress6CH pstlAdr = new PostalAddress6CH();
 
 		splitStreetAndNumber(location.getAddress1(), pstlAdr);
 
-		pstlAdr.setPstCd(getFirstNonEmpty(location.getPostal()));
-		pstlAdr.setTwnNm(getFirstNonEmpty(location.getCity()));
-		pstlAdr.setCtry(getFirstNonEmpty(location.getC_Country().getCountryCode())); // note: C_Location.C_Country is a mandatory column
+		pstlAdr.setPstCd(location.getPostal());
+		pstlAdr.setTwnNm(location.getCity());
+		pstlAdr.setCtry(location.getC_Country().getCountryCode()); // note: C_Location.C_Country is a mandatory column
 
 		return pstlAdr;
 	}
 
-	private PostalAddress6CH createPstlAdr(final org.compiere.model.I_C_BP_BankAccount bpBankAccount,
+	private PostalAddress6CH createPstlAdr(
+			final org.compiere.model.I_C_BP_BankAccount bpBankAccount,
 			final I_C_Location location)
 	{
 		final PostalAddress6CH pstlAdr = createPstlAdr(location);
@@ -648,11 +660,20 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 		{
 			return pstlAdr;
 		}
+
 		splitStreetAndNumber(bpBankAccount.getA_Street(), pstlAdr);
 
-		pstlAdr.setPstCd(getFirstNonEmpty(bpBankAccount.getA_Zip(), pstlAdr.getPstCd()));
-		pstlAdr.setTwnNm(getFirstNonEmpty(bpBankAccount.getA_City(), pstlAdr.getTwnNm()));
-		pstlAdr.setCtry(getFirstNonEmpty(bpBankAccount.getA_Country(), pstlAdr.getCtry()));
+		pstlAdr.setPstCd(getFirstNonEmpty(
+				() -> bpBankAccount.getA_Zip(),
+				() -> pstlAdr.getPstCd()));
+
+		pstlAdr.setTwnNm(getFirstNonEmpty(
+				() -> bpBankAccount.getA_City(),
+				() -> pstlAdr.getTwnNm()));
+
+		pstlAdr.setCtry(getFirstNonEmpty(
+				() -> bpBankAccount.getA_Country(),
+				() -> pstlAdr.getCtry()));
 
 		return pstlAdr;
 	}
@@ -675,8 +696,8 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 		final String street = matcher.group(1);
 		final String number = matcher.group(2);
 
-		pstlAdr.setStrtNm(getFirstNonEmpty(street));
-		pstlAdr.setBldgNb(getFirstNonEmpty(number));
+		pstlAdr.setStrtNm(street);
+		pstlAdr.setBldgNb(number);
 	}
 
 	/**
@@ -753,36 +774,29 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 		return datatypeFactory.newXMLGregorianCalendar(dateStr);
 	}
 
-	@Override
 	public String getPainIdentifier()
 	{
 		return PAIN_001_001_03_CH_02;
 	}
 
-	@Override
 	public boolean isSupportsOtherCurrencies()
 	{
 		return true;
 	}
 
-	@Override
 	public boolean isSupportsGenericAccountIdentification()
 	{
 		return true;
 	}
 
 	@Override
-	public Set<SupportedTransactionType> getSupportedTransactionTypes()
-	{
-		return Collections.singleton(SupportedTransactionType.credit);
-	}
-
-	@Override
 	public String toString()
 	{
-		return String
-				.format("SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 [getPainIdentifier()=%s, isSupportsOtherCurrencies()=%s, isSupportsGenericAccountIdentification()=%s, getSupportedTransactionTypes()=%s]",
-						getPainIdentifier(), isSupportsOtherCurrencies(), isSupportsGenericAccountIdentification(), getSupportedTransactionTypes());
+		return String.format(
+				"SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 [getPainIdentifier()=%s, isSupportsOtherCurrencies()=%s, isSupportsGenericAccountIdentification()=%s]",
+				getPainIdentifier(),
+				isSupportsOtherCurrencies(),
+				isSupportsGenericAccountIdentification());
 	}
 
 	private String getPaymentType(final I_SEPA_Export_Line line)
@@ -795,7 +809,7 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02 implements ISEPAMars
 		}
 		else
 		{
-			final String currencyIso = bPBankAccount.getC_Currency().getISO_Code();
+			final String currencyIso = line.getC_Currency().getISO_Code();
 
 			final String iban = line.getIBAN();
 

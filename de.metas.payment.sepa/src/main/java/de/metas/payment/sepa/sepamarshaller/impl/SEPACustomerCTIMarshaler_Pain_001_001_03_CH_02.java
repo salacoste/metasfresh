@@ -128,6 +128,8 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02
 
 	private static final String BIC_NOTPROVIDED = "NOTPROVIDED";
 
+	private static final String BIC_INTERNATIONAL = "BIC International";
+
 	/**
 	 * Identifier of the <b>Pa</b>yment <b>In</b>itiation format (XSD) used by this marshaller.
 	 */
@@ -330,22 +332,13 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02
 		// zahlungsart
 		final String paymentMode = getPaymentType(sepaLine);
 
-		//
 		// Payment type information.
 		{
 			final PaymentTypeInformation19CH pmtTpInf = new PaymentTypeInformation19CH();
 			pmtInf.setPmtTpInf(pmtTpInf);
 
 			// service level
-			if (paymentMode == ZAHLUNGS_ART_5)
-			{
-				// ServiceLEvel.Code "SEPA" does not work if we are doing transactions in swizz. TODO: consider to introduce a decent switch
-				// Service level - Hard-coded value of SEPA.
-				final ServiceLevel8Choice svcLvl = new ServiceLevel8Choice();
-				svcLvl.setCd("SEPA");
-				pmtTpInf.setSvcLvl(svcLvl);
-			}
-			else if (paymentMode == ZAHLUNGS_ART_1)
+			if (paymentMode == ZAHLUNGS_ART_1)
 			{
 				// local instrument
 				final LocalInstrument2Choice lclInstrm = new LocalInstrument2Choice();
@@ -365,6 +358,14 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02
 				final LocalInstrument2Choice lclInstrm = new LocalInstrument2Choice();
 				lclInstrm.setPrtry("CH03"); // Zahlungsart 2.2
 				pmtTpInf.setLclInstrm(lclInstrm);
+			}
+			else if (paymentMode == ZAHLUNGS_ART_5)
+			{
+				// ServiceLEvel.Code "SEPA" does not work if we are doing transactions in swizz. TODO: consider to introduce a decent switch
+				// Service level - Hard-coded value of SEPA.
+				final ServiceLevel8Choice svcLvl = new ServiceLevel8Choice();
+				svcLvl.setCd("SEPA");
+				pmtTpInf.setSvcLvl(svcLvl);
 			}
 		}
 
@@ -449,18 +450,19 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02
 
 		//
 		// Creditor Agent (i.e. Bank)
-		// not allowed for 1, 2.1, 7 and 8, must for the rest
+		// not allowed for 1, 2.1, 8
+		// allowed for 3, 5 (but will probably be ignored as the info is taken from the IBAN)
+		// mandatory for 6
 		if (paymentType != ZAHLUNGS_ART_1
 				&& paymentType != ZAHLUNGS_ART_2_1
-				&& paymentType != ZAHLUNGS_ART_7
 				&& paymentType != ZAHLUNGS_ART_8)
 		{
-
 			final BranchAndFinancialInstitutionIdentification4CH cdtrAgt = new BranchAndFinancialInstitutionIdentification4CH();
 			cdtTrfTxInf.setCdtrAgt(cdtrAgt);
 
 			final FinancialInstitutionIdentification7CH finInstnId = new FinancialInstitutionIdentification7CH();
 			cdtrAgt.setFinInstnId(finInstnId);
+
 
 			final String bcFromIBAN = extractBCFromIban(line.getIBAN(), line);
 			if (!Check.isEmpty(bcFromIBAN))
@@ -478,14 +480,18 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02
 				// has to be CHBCC for payment modes 2.2, 3, 4; note if we do paymentMode 5 ("real" SEPA), we ren't in this if-block to start with
 				clrSysId.setCd("CHBCC");
 			}
+
+			if (paymentType == ZAHLUNGS_ART_6)
+			{
+				finInstnId.setBIC(BIC_INTERNATIONAL);
+			}
 			else if (!Check.isEmpty(line.getSwiftCode(), true))
 			{
 				finInstnId.setBIC(line.getSwiftCode());
 			}
 			else
 			{
-				// let the bank see what it can do
-				finInstnId.setBIC(BIC_NOTPROVIDED);
+				finInstnId.setBIC(BIC_NOTPROVIDED); // let the bank see what it can do
 			}
 
 			//
@@ -497,7 +503,7 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02
 				final String bankName = getBankNameIfAny(line);
 
 				Check.errorIf(Check.isEmpty(bankName, true), SepaMarshallerException.class,
-						"Zahlart={}, but line {} has no information about the bank name",
+						"payment type={}, but line has no information about the bank name; line={}",
 						paymentType, createInfo(line));
 
 				finInstnId.setNm(bankName);
@@ -580,7 +586,6 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02
 
 		// Remittance Info
 		{
-
 			final RemittanceInformation5CH rmtInf = new RemittanceInformation5CH();
 			if (Check.isEmpty(line.getStructuredRemittanceInfo(), true)
 					|| paymentType == ZAHLUNGS_ART_3
@@ -801,11 +806,12 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02
 
 	private String getPaymentType(final I_SEPA_Export_Line line)
 	{
-		final String paymentMode;
+
 		final de.metas.payment.esr.model.I_C_BP_BankAccount bPBankAccount = InterfaceWrapperHelper.create(line.getC_BP_BankAccount(), de.metas.payment.esr.model.I_C_BP_BankAccount.class);
+
 		if (bPBankAccount.isEsrAccount() && !Check.isEmpty(line.getStructuredRemittanceInfo(), true))
 		{
-			paymentMode = ZAHLUNGS_ART_1;
+			return ZAHLUNGS_ART_1;
 		}
 		else
 		{
@@ -814,32 +820,41 @@ public class SEPACustomerCTIMarshaler_Pain_001_001_03_CH_02
 			final String iban = line.getIBAN();
 
 			final boolean swizzIban = isSwizzIBAN(iban);
+			final boolean currencyIsEur = "EUR".equals(currencyIso);
+			final boolean currencyIsChf = "CHF".equals(currencyIso);
+
 			if (swizzIban || bPBankAccount.isEsrAccount())
 			{
 				// "domestic" IBAN. it contains the bank code (BC) and we will use it.
-				Check.errorIf(!"EUR".equals(currencyIso) && !"CHF".equals(currencyIso),
+				Check.errorUnless(currencyIsEur || currencyIsChf,
 						SepaMarshallerException.class,
 						"line {} has a swizz IBAN, but the currency is {} instead of 'CHF' or 'EUR'",
 						createInfo(line), currencyIso);
 
-				paymentMode = ZAHLUNGS_ART_3; // we can go with zahlart 2.2
+				return ZAHLUNGS_ART_3; // we can go with zahlart 2.2
 			}
 			else
 			{
+				// international IBAN
 				Check.errorIf(Check.isEmpty(iban, true), SepaMarshallerException.class,
 						"line {} has a non-ESR bank account, and no IBAN",
 						createInfo(line));
+				if (currencyIsEur)
+				{
+					return ZAHLUNGS_ART_5; //
+				}
+				else if (currencyIsChf)
+				{
+					return ZAHLUNGS_ART_6; //
+				}
 
-				// international IBAN
-				Check.errorIf(!"EUR".equals(currencyIso),
+				Check.errorIf(true,
 						SepaMarshallerException.class,
 						"line {} has a non-IBAN {}, but the currency is {} instead of 'EUR'",
 						line, iban, currencyIso);
-				paymentMode = ZAHLUNGS_ART_5; //
+				return null;
 			}
 		}
-
-		return paymentMode;
 	}
 
 	private String createInfo(final I_SEPA_Export_Line line)

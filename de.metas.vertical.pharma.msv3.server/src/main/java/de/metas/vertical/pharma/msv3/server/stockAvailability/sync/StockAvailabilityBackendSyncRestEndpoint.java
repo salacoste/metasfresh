@@ -32,7 +32,7 @@ import de.metas.vertical.pharma.msv3.server.stockAvailability.StockAvailabilityS
  */
 
 @RestController
-@RequestMapping(value = StockAvailabilityBackendSyncRestEndpoint.ENDPOINT)
+@RequestMapping(StockAvailabilityBackendSyncRestEndpoint.ENDPOINT)
 public class StockAvailabilityBackendSyncRestEndpoint
 {
 	public static final String ENDPOINT = MSV3ServerConstants.BACKEND_SYNC_REST_ENDPOINT + "/availableStock";

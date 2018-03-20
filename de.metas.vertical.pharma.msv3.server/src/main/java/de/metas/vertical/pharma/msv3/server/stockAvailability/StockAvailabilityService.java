@@ -1,9 +1,6 @@
 package de.metas.vertical.pharma.msv3.server.stockAvailability;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-
-import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -53,24 +50,10 @@ import lombok.NonNull;
 public class StockAvailabilityService
 {
 	@Autowired
-	private StockAvailabilityRepository stockAvailabilityRepo;
-
-	@PostConstruct
-	private void createDummyData()
-	{
-		for (long pzn : Arrays.asList(1112223, 1112224, 1112225, 1112226))
-		{
-			final StockAvailability sa = new StockAvailability();
-			sa.setPzn(pzn);
-			sa.setQty(30);
-			stockAvailabilityRepo.save(sa);
-		}
-	}
+	private JpaStockAvailabilityRepository stockAvailabilityRepo;
 
 	public StockAvailabilityResponse checkAvailability(final StockAvailabilityQuery query)
 	{
-		// if(true)return createMockAnswer(query);
-
 		final StockAvailabilityResponseBuilder responseBuilder = StockAvailabilityResponse.builder()
 				.id(query.getId())
 				.availabilityType(AvailabilityType.SPECIFIC);
@@ -79,14 +62,14 @@ public class StockAvailabilityService
 		{
 			final Quantity qtyAvailable;
 
-			final StockAvailability stockAvailability = stockAvailabilityRepo.findByPzn(queryItem.getPzn().getValueAsLong());
-			if (stockAvailability == null)
+			final JpaStockAvailability jpaStockAvailability = stockAvailabilityRepo.findByPzn(queryItem.getPzn().getValueAsLong());
+			if (jpaStockAvailability == null)
 			{
 				qtyAvailable = Quantity.ZERO;
 			}
 			else
 			{
-				qtyAvailable = queryItem.getQtyRequired().min(stockAvailability.getQty());
+				qtyAvailable = queryItem.getQtyRequired().min(jpaStockAvailability.getQty());
 			}
 
 			responseBuilder.item(StockAvailabilityResponseItem.builder()
@@ -132,14 +115,14 @@ public class StockAvailabilityService
 
 	private void updateStockAvailability(@NonNull final JsonStockAvailability request)
 	{
-		StockAvailability stockAvailability = stockAvailabilityRepo.findByPzn(request.getPzn());
-		if (stockAvailability == null)
+		JpaStockAvailability jpaStockAvailability = stockAvailabilityRepo.findByPzn(request.getPzn());
+		if (jpaStockAvailability == null)
 		{
-			stockAvailability = new StockAvailability();
-			stockAvailability.setPzn(request.getPzn());
+			jpaStockAvailability = new JpaStockAvailability();
+			jpaStockAvailability.setPzn(request.getPzn());
 		}
 
-		stockAvailability.setQty(request.getQty());
-		stockAvailabilityRepo.save(stockAvailability);
+		jpaStockAvailability.setQty(request.getQty());
+		stockAvailabilityRepo.save(jpaStockAvailability);
 	}
 }

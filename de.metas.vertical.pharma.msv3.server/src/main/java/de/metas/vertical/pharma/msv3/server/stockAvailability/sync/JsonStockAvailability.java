@@ -2,8 +2,10 @@ package de.metas.vertical.pharma.msv3.server.stockAvailability.sync;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.Builder;
 import lombok.Value;
 
 /*
@@ -37,7 +39,9 @@ public class JsonStockAvailability
 	@JsonProperty("qty")
 	private int qty;
 
-	public JsonStockAvailability(
+	@JsonCreator
+	@Builder
+	private JsonStockAvailability(
 			@JsonProperty("pzn") final long pzn,
 			@JsonProperty("qty") final int qty)
 	{

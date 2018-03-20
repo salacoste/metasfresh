@@ -12,5 +12,13 @@ INSERT INTO AD_Column_Trl (AD_Language,AD_Column_ID, Name, IsTranslated,AD_Clien
 
 -- 2018-03-19T16:23:03.878
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
-/* DDL */ SELECT public.db_alter_table('SEPA_Export','ALTER TABLE public.SEPA_Export ADD COLUMN IsExportBatchBookings CHAR(1) DEFAULT ''Y'' CHECK (IsExportBatchBookings IN (''Y'',''N'')) NOT NULL')
-;
+DO $$ 
+    BEGIN
+        BEGIN
+		/* DDL */ PERFORM public.db_alter_table('SEPA_Export','ALTER TABLE public.SEPA_Export ADD COLUMN IsExportBatchBookings CHAR(1) DEFAULT ''Y'' CHECK (IsExportBatchBookings IN (''Y'',''N'')) NOT NULL')
+		;
+        EXCEPTION
+            WHEN duplicate_column THEN RAISE NOTICE 'column IsExportBatchBookings already exists in SEPA_Export.';
+        END;
+    END;
+$$

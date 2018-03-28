@@ -35,25 +35,17 @@ import lombok.ToString;
  */
 
 @Entity
-@Table(name = "order_package_item")
+@Table(name = "msv3_order_package_item")
+@Getter
+@Setter
 @ToString
 public class JpaOrderPackageItem extends AbstractEntity
 {
 	@ManyToOne(fetch = FetchType.EAGER)
 	@NotNull
-	@Getter
-	@Setter
 	private JpaOrderPackage orderPackage;
-
-	@Getter
-	@Setter
 	private long pzn;
-
-	@Getter
-	@Setter
 	private int qty;
-
-	@Getter
-	@Setter
 	private DeliverySpecifications deliverySpecifications;
+	private int ol_cand_id;
 }

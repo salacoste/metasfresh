@@ -61,7 +61,6 @@ import de.metas.handlingunits.model.I_M_HU_PI_Version;
 import de.metas.handlingunits.model.X_M_HU;
 import de.metas.handlingunits.model.X_M_HU_Item;
 import de.metas.handlingunits.model.X_M_HU_PI_Item;
-import de.metas.handlingunits.model.X_M_HU_PI_Version;
 import de.metas.handlingunits.storage.IHUStorageDAO;
 import lombok.NonNull;
 
@@ -528,7 +527,7 @@ import lombok.NonNull;
 			boolean huHasMaterialItem = false;
 
 			// Create "regular" material items and packing-material items that are declared by the PI
-			final I_M_HU_PI_Version piVersion = hu.getM_HU_PI_Version();
+			final I_M_HU_PI_Version piVersion = handlingUnitsBL.getPIVersion(hu);
 			final List<I_M_HU_PI_Item> piItems = handlingUnitsDAO.retrievePIItems(piVersion, getC_BPartner());
 
 			final boolean huIsVirtual = handlingUnitsBL.isVirtual(hu);
@@ -565,7 +564,7 @@ import lombok.NonNull;
 			// The given HU is not configured to hold material itself because e.g. it is a palet.
 			// Therefore we add one "aggregate" item which can then later onwards represent the child-HUs and its content.
 			final boolean huIsNotYetAnAggregate = !handlingUnitsBL.isAggregateHU(hu);
-			final boolean huIsLU = X_M_HU_PI_Version.HU_UNITTYPE_LoadLogistiqueUnit.equals(hu.getM_HU_PI_Version().getHU_UnitType());
+			final boolean huIsLU = handlingUnitsBL.isLoadingUnit(hu);
 			if (!huHasMaterialItem && huIsNotYetAnAggregate)
 			{
 				if (huIsLU)

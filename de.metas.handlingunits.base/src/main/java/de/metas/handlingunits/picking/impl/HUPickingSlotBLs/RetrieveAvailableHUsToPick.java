@@ -20,7 +20,6 @@ import de.metas.handlingunits.model.X_M_HU;
 import de.metas.handlingunits.picking.IHUPickingSlotBL.PickingHUsQuery;
 import de.metas.handlingunits.picking.IHUPickingSlotDAO;
 import de.metas.handlingunits.picking.impl.HUPickingSlotBL;
-import de.metas.handlingunits.sourcehu.SourceHUsService;
 import de.metas.inoutcandidate.api.IShipmentScheduleBL;
 import de.metas.inoutcandidate.model.I_M_ShipmentSchedule;
 import de.metas.storage.IStorageEngine;
@@ -41,12 +40,12 @@ import lombok.experimental.UtilityClass;
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program. If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -57,7 +56,7 @@ import lombok.experimental.UtilityClass;
  * Contains methods used to support
  * {@link HUPickingSlotBL#retrieveAvailableHUsToPick(de.metas.handlingunits.picking.IHUPickingSlotBL.PickingHUsQuery)} and
  * {@link HUPickingSlotBL#retrieveAvailableSourceHUs(de.metas.handlingunits.picking.IHUPickingSlotBL.PickingHUsQuery)}.
- * 
+ *
  * @author metas-dev <dev@metasfresh.com>
  *
  */
@@ -141,12 +140,6 @@ public class RetrieveAvailableHUsToPick
 
 		final IHUPickingSlotDAO huPickingSlotDAO = Services.get(IHUPickingSlotDAO.class);
 		if (huPickingSlotDAO.isHuIdPicked(vhu.getM_HU_ID()))
-		{
-			return;
-		}
-
-		final SourceHUsService sourceHuService = SourceHUsService.get();
-		if (sourceHuService.isSourceHu(vhu.getM_HU_ID()))
 		{
 			return;
 		}

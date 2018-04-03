@@ -598,7 +598,7 @@ public class HUPickingSlotBL
 	@Override
 	public List<I_M_HU> retrieveAvailableHUsToPick(@NonNull final PickingHUsQuery query)
 	{
-		final Function<List<I_M_HU>, List<I_M_HU>> vhuToEndResultFunction = vhus -> RetrieveAvailableHUsToPickFilters.retrieveFullTreeAndExcludePickingHUs(vhus);
+		final Function<List<I_M_HU>, List<I_M_HU>> vhuToEndResultFunction = vhus -> RetrieveAvailableHUsToPickFilters.retrieveFullTreeAndExcludePickedOrSourceHUs(vhus);
 
 		return RetrieveAvailableHUsToPick.retrieveAvailableHUsToPick(query, vhuToEndResultFunction);
 	}

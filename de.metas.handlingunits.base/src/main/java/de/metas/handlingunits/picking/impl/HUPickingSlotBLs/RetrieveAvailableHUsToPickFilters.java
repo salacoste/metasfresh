@@ -52,7 +52,7 @@ import lombok.experimental.UtilityClass;
 public class RetrieveAvailableHUsToPickFilters
 {
 
-	private static final Predicate<I_M_HU> NOT_PICKED_NOT_SOURCE_HU = hu -> {
+	private static final Predicate<I_M_HU> EXCLUDE_PICKED_OR_SOURCE_HU = hu -> {
 
 		final IHUPickingSlotDAO huPickingSlotDAO = Services.get(IHUPickingSlotDAO.class);
 		final SourceHUsService sourceHuService = SourceHUsService.get();
@@ -66,7 +66,7 @@ public class RetrieveAvailableHUsToPickFilters
 	 * @param vhus
 	 * @return
 	 */
-	public List<I_M_HU> retrieveFullTreeAndExcludePickingHUs(@NonNull final List<I_M_HU> vhus)
+	public List<I_M_HU> retrieveFullTreeAndExcludePickedOrSourceHUs(@NonNull final List<I_M_HU> vhus)
 	{
 		final List<I_M_HU> husTopLevel = retrieveTopLevelUs(vhus);
 		final List<I_M_HU> result = filterForValidPaths(husTopLevel);
@@ -86,7 +86,7 @@ public class RetrieveAvailableHUsToPickFilters
 		final TopLevelHusQuery topLevelHusRequest = TopLevelHusQuery.builder()
 				.hus(vhus)
 				.includeAll(false)
-				.filter(NOT_PICKED_NOT_SOURCE_HU) // exclude HUs that are already picked or flagged as source HUs
+				.filter(EXCLUDE_PICKED_OR_SOURCE_HU) // exclude HUs that are already picked or flagged as source HUs
 				.build();
 		final List<I_M_HU> husTopLevel = handlingUnitsBL.getTopLevelHUs(topLevelHusRequest);
 		return husTopLevel;
@@ -112,7 +112,7 @@ public class RetrieveAvailableHUsToPickFilters
 						@Override
 						public Result beforeHU(IMutable<I_M_HU> hu)
 						{
-							if (!NOT_PICKED_NOT_SOURCE_HU.test(hu.getValue()))
+							if (!EXCLUDE_PICKED_OR_SOURCE_HU.test(hu.getValue()))
 							{
 								return Result.SKIP_DOWNSTREAM;
 							}

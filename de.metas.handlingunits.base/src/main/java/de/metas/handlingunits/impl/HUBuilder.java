@@ -531,6 +531,8 @@ import lombok.NonNull;
 			final I_M_HU_PI_Version piVersion = hu.getM_HU_PI_Version();
 			final List<I_M_HU_PI_Item> piItems = handlingUnitsDAO.retrievePIItems(piVersion, getC_BPartner());
 
+			final boolean huIsVirtual = handlingUnitsBL.isVirtual(hu);
+
 			for (final I_M_HU_PI_Item piItem : piItems)
 			{
 				final String itemType = piItem.getItemType();
@@ -539,6 +541,12 @@ import lombok.NonNull;
 					// gh #460: don't create any HU item.
 					// otherwise we would now create one item for each piItem. For a top-level LU like palette, this might mean to create dozens of different TU-items, even if only one of them is actually used.
 					// *If* we actually really need to add child-HU later, then the respective HU-item will be created on the fly (currently that's happening in LULoaderInstance).
+					continue;
+				}
+
+				if (X_M_HU_PI_Item.ITEMTYPE_Material.equals(itemType) && huIsVirtual)
+				{
+					// a virtual HU doesn't need any MI-items
 					continue;
 				}
 
@@ -557,7 +565,6 @@ import lombok.NonNull;
 			// The given HU is not configured to hold material itself because e.g. it is a palet.
 			// Therefore we add one "aggregate" item which can then later onwards represent the child-HUs and its content.
 			final boolean huIsNotYetAnAggregate = !handlingUnitsBL.isAggregateHU(hu);
-			final boolean huIsVirtual = handlingUnitsBL.isVirtual(hu);
 			final boolean huIsLU = X_M_HU_PI_Version.HU_UNITTYPE_LoadLogistiqueUnit.equals(hu.getM_HU_PI_Version().getHU_UnitType());
 			if (!huHasMaterialItem && huIsNotYetAnAggregate)
 			{

@@ -21,6 +21,8 @@ Here come the actual release notes:
     * Improved Window Layout and additional Translations for de_DE and en_US.
   * [#3888](https://github.com/metasfresh/metasfresh/issues/3888) Pharma Business Partner Window adjustments
     * Extended Business Partner Window for Pharma verticals. New Fields that describe the Pharma Trading Permissions of customers and vendors.
+  * [#3897](https://github.com/metasfresh/metasfresh/issues/3897) Add Translations for Pharma Business Partner Window
+    * Further Improvements and Translations to en_US for Business Partner Pharma Window and new Pharma Permission Fields.
 
 ## Fixes
 * metasfresh

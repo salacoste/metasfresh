@@ -55,7 +55,6 @@ import org.compiere.model.I_M_PriceList;
 import org.compiere.model.I_M_PriceList_Version;
 import org.compiere.model.I_M_PricingSystem;
 import org.compiere.model.X_C_DocType;
-import org.compiere.util.Env;
 import org.slf4j.Logger;
 
 import de.metas.adempiere.model.I_C_BPartner_Location;
@@ -185,10 +184,10 @@ public class OrderBL implements IOrderBL
 		final I_M_PriceList priceList = retrievePriceListOrNull(pricingSystemId, bpartnerAndLocation, order.isSOTrx());
 		if (priceList == null)
 		{
-			// Fail if no price list found
-			final I_M_PricingSystem pricingSystem = InterfaceWrapperHelper.create(Env.getCtx(), pricingSystemId, I_M_PricingSystem.class, ITrx.TRXNAME_None);
-			final String pricingSystemName = pricingSystem == null ? "-" : pricingSystem.getName();
-			throw new PriceListNotFoundException(pricingSystemName, order.isSOTrx());
+			// reset the the pricing system on null and allow the user to correct it
+			order.setM_PricingSystem(null);
+			logger.error("order {} has no pricing list  for the selected C_BPartner_Location_ID. Reset pricing system to null", order);
+			return;
 		}
 
 		order.setM_PriceList(priceList);

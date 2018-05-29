@@ -19,7 +19,7 @@ public class OrderPricingSystem extends CalloutEngine
 
 		final I_C_Order order = calloutField.getModel(I_C_Order.class);
 		final boolean overridePricingSystem = true;
-//		Services.get(IOrderBL.class).setM_PricingSystem_ID(order, overridePricingSystem);
+		Services.get(IOrderBL.class).setM_PricingSystem_ID(order, overridePricingSystem);
 
 		return NO_ERROR;
 	}

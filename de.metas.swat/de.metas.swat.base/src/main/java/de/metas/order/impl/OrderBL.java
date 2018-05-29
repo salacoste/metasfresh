@@ -55,6 +55,7 @@ import org.compiere.model.I_M_PriceList;
 import org.compiere.model.I_M_PriceList_Version;
 import org.compiere.model.I_M_PricingSystem;
 import org.compiere.model.X_C_DocType;
+import org.compiere.util.Env;
 import org.slf4j.Logger;
 
 import de.metas.adempiere.model.I_C_BPartner_Location;
@@ -70,6 +71,7 @@ import de.metas.order.IOrderDAO;
 import de.metas.order.IOrderPA;
 import de.metas.pricing.exceptions.PriceListNotFoundException;
 import de.metas.pricing.service.IPriceListDAO;
+import lombok.NonNull;
 
 public class OrderBL implements IOrderBL
 {
@@ -149,48 +151,40 @@ public class OrderBL implements IOrderBL
 
 			order.setM_PricingSystem_ID(pricingSysId);
 		}
-
-		//
-		// Update the M_PriceList_ID only if:
-		// * overridePricingSystem is true => this is also covering the case when pricing system was not changed but for some reason the price list could be a different one (Date changed etc)
-		// * pricing system really changed => we need to set to correct price list
-		// Cases we want to avoid:
-		// * overridePriceSystem is false and M_PricingSystem_ID was not changed: in this case we shall NOT update the price list because it might be that we were called for a completed Order and we don't want to change the data.
-		if (overridePricingSystemAndDontThrowExIfNotFound || previousPricingSystemId != order.getM_PricingSystem_ID()
-				|| order.getM_PriceList_ID() <= 0 // gh #936: attempt to set the pricelist, if we don't have it yet (i don't understand the error, but this might solve it. going to try it out)
-		)
-		{
-			setPriceList(order);
-		}
 	}
 
 	@Override
 	public void setPriceList(final I_C_Order order)
 	{
+		final I_M_PriceList priceList = findPriceListOrNull(order);
+		if (priceList == null)
+		{
+			final I_M_PricingSystem pricingSystem = InterfaceWrapperHelper.create(Env.getCtx(), order.getM_PricingSystem_ID(), I_M_PricingSystem.class, ITrx.TRXNAME_None);
+			final String pricingSystemName = pricingSystem == null ? "-" : pricingSystem.getName();
+			throw new PriceListNotFoundException(pricingSystemName, order.isSOTrx());
+		}
+
+		order.setM_PriceList(priceList);
+	}
+
+	@Override
+	public I_M_PriceList findPriceListOrNull(@NonNull final I_C_Order order)
+	{
 		final int pricingSystemId = order.getM_PricingSystem_ID();
 		if (pricingSystemId <= 0)
 		{
 			logger.debug("order {} has no M_PricingSystem_ID. Doing nothing", order);
-			return;
+			return null;
 		}
 
 		final BillBPartnerAndShipToLocation bpartnerAndLocation = extractPriceListBPartnerAndLocation(order);
 		if (bpartnerAndLocation.getShip_BPartner_Location_ID() <= 0)
 		{
 			logger.debug("order {} has no C_BPartner_Location_ID. Doing nothing", order);
-			return;
+			return null;
 		}
 
-		final I_M_PriceList priceList = retrievePriceListOrNull(pricingSystemId, bpartnerAndLocation, order.isSOTrx());
-		if (priceList == null)
-		{
-			// reset the the pricing system on null and allow the user to correct it
-			order.setM_PricingSystem(null);
-			logger.error("order {} has no pricing list  for the selected C_BPartner_Location_ID. Reset pricing system to null", order);
-			return;
-		}
-
-		order.setM_PriceList(priceList);
+		return retrievePriceListOrNull(pricingSystemId, bpartnerAndLocation, order.isSOTrx());
 	}
 
 	@Override

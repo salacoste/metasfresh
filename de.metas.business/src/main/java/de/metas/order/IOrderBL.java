@@ -11,6 +11,7 @@ import org.compiere.model.I_C_BPartner_Location;
 import org.compiere.model.I_C_Order;
 import org.compiere.model.I_C_OrderLine;
 import org.compiere.model.I_C_Tax;
+import org.compiere.model.I_M_PriceList;
 import org.compiere.model.I_M_PriceList_Version;
 
 import de.metas.pricing.exceptions.PriceListNotFoundException;
@@ -25,7 +26,7 @@ public interface IOrderBL extends ISingletonService
 	 * @param order
 	 *
 	 * @see "<a href='http://dewiki908/mediawiki/index.php/Versandkostenermittlung/_-berechnung_(2009_0027_G28)'>DV-Konzept (2009_0027_G28)</a>"
-	 * 
+	 *
 	 * @throws AdempiereException in case of failure
 	 */
 	void checkFreightCost(I_C_Order order);
@@ -38,7 +39,7 @@ public interface IOrderBL extends ISingletonService
 	 * <li>pricing system is not set
 	 * <li>partner location is not set
 	 * </ul>
-	 * 
+	 *
 	 * @throws PriceListNotFoundException if no price list was found
 	 */
 	void setPriceList(I_C_Order order);
@@ -126,7 +127,7 @@ public interface IOrderBL extends ISingletonService
 	/**
 	 * Set Target Sales Document Type.
 	 * This method is also setting IsSOTrx to true.
-	 * 
+	 *
 	 * @param order
 	 * @param soDocSubType sales DocSubType
 	 */
@@ -242,4 +243,6 @@ public interface IOrderBL extends ISingletonService
 	 * @return true if the order is a quotation (C_Order's C_DocType.docBaseType = SSO and DocSubType in ('OB' , 'ON' = Quotation or Proposal)
 	 */
 	boolean isQuotation(I_C_Order order);
+
+	I_M_PriceList findPriceListOrNull(I_C_Order order);
 }

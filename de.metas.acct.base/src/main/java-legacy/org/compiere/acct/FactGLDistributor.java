@@ -4,12 +4,11 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import org.slf4j.Logger;
-import de.metas.logging.LogManager;
 
 import org.adempiere.acct.api.GLDistributionBuilder;
 import org.adempiere.acct.api.GLDistributionResult;
 import org.adempiere.acct.api.GLDistributionResultLine;
+import org.adempiere.acct.api.GLDistributionResultLine.Sign;
 import org.adempiere.acct.api.IAccountDimension;
 import org.adempiere.acct.api.IFactAcctBL;
 import org.adempiere.acct.api.IGLDistributionDAO;
@@ -21,9 +20,11 @@ import org.adempiere.util.Services;
 import org.compiere.model.I_GL_Distribution;
 import org.compiere.model.MAccount;
 import org.slf4j.Logger;
-import de.metas.logging.LogManager;
 
 import com.google.common.collect.ImmutableList;
+
+import de.metas.logging.LogManager;
+import lombok.NonNull;
 
 /*
  * #%L
@@ -38,11 +39,11 @@ import com.google.common.collect.ImmutableList;
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public
- * License along with this program.  If not, see
+ * License along with this program. If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  * #L%
  */
@@ -100,6 +101,7 @@ import com.google.common.collect.ImmutableList;
 					.setGLDistribution(distribution)
 					.setAccountDimension(lineDimension)
 					.setAmountToDistribute(line.getSourceBalance())
+					.setAmountSign(deriveAmountSign(line))
 					.setC_Currency_ID(line.getC_Currency_ID())
 					.setQtyToDistribute(line.getQty())
 					.distribute();
@@ -131,6 +133,20 @@ import com.google.common.collect.ImmutableList;
 		newLines.addAll(newLines_Last);
 
 		return newLines;
+	}
+
+	private Sign deriveAmountSign(@NonNull final FactLine line)
+	{
+		final Sign amountSign;
+		if (line.getAmtSourceDr() != null && line.getAmtSourceDr().signum() != 0)
+		{
+			amountSign = Sign.DEBIT;
+		}
+		else
+		{
+			amountSign = Sign.CREDIT;
+		}
+		return amountSign;
 	}
 
 	/**
@@ -217,14 +233,8 @@ import com.google.common.collect.ImmutableList;
 				.build());
 
 		// Amount
-		if (amount.signum() < 0)
-		{
-			factLine.setAmtSource(glDistributionLine.getC_Currency_ID(), null, amount.negate());
-		}
-		else
-		{
-			factLine.setAmtSource(glDistributionLine.getC_Currency_ID(), amount, null);
-		}
+		setAmountToFactLine(glDistributionLine, factLine);
+
 		factLine.setQty(glDistributionLine.getQty());
 		// Convert
 		factLine.convert();
@@ -234,5 +244,34 @@ import com.google.common.collect.ImmutableList;
 
 		logger.info("{}", factLine);
 		return factLine;
+	}
+
+	private void setAmountToFactLine(
+			@NonNull final GLDistributionResultLine glDistributionLine,
+			@NonNull final FactLine factLine)
+	{
+		final BigDecimal amount = glDistributionLine.getAmount();
+
+		switch (glDistributionLine.getAmountSign())
+		{
+			case CREDIT:
+				factLine.setAmtSource(glDistributionLine.getC_Currency_ID(), null, amount);
+				break;
+
+			case DEBIT:
+				factLine.setAmtSource(glDistributionLine.getC_Currency_ID(), amount, null);
+				break;
+
+			case DETECT:
+				if (amount.signum() < 0)
+				{
+					factLine.setAmtSource(glDistributionLine.getC_Currency_ID(), null, amount.negate());
+				}
+				else
+				{
+					factLine.setAmtSource(glDistributionLine.getC_Currency_ID(), amount, null);
+				}
+				break;
+		}
 	}
 }

@@ -251,12 +251,17 @@ public class PurchaseCandidate
 
 	public boolean isProcessedOrLocked()
 	{
-		return state.isProcessed() || state.isLocked();
+		return isProcessed() || isLocked();
 	}
 
 	public boolean isProcessed()
 	{
 		return state.isProcessed();
+	}
+
+	public boolean isLocked()
+	{
+		return state.isLocked();
 	}
 
 	public boolean hasChanges()

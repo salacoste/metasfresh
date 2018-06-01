@@ -93,8 +93,8 @@ public class PurchaseDemandWithCandidatesService
 				.stream()
 				.map(demand -> PurchaseDemandWithCandidates.builder()
 						.purchaseDemand(demand)
-						.purchaseCandidates(preExistingCandidatesByDemandId.get(demand.getId()))
-						.purchaseCandidates(newCandidatesByDemandId.get(demand.getId()))
+						.purchaseCandidateGroups(preExistingCandidatesByDemandId.get(demand.getId()))
+						.purchaseCandidateGroups(newCandidatesByDemandId.get(demand.getId()))
 						.build())
 				.collect(ImmutableList.toImmutableList());
 	}

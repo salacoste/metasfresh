@@ -1,6 +1,6 @@
 package de.metas.purchasecandidate;
 
-import java.util.List;
+import com.google.common.collect.ImmutableList;
 
 import lombok.Builder;
 import lombok.NonNull;
@@ -37,5 +37,6 @@ public class PurchaseDemandWithCandidates
 	PurchaseDemand purchaseDemand;
 
 	@Singular
-	List<PurchaseCandidate> purchaseCandidates;
+	@NonNull
+	ImmutableList<PurchaseCandidateGroup> purchaseCandidateGroups;
 }

@@ -29,7 +29,6 @@ import java.sql.Timestamp;
 import java.util.Optional;
 import java.util.Properties;
 
-import org.adempiere.archive.api.IArchiveDAO;
 import org.adempiere.archive.api.IArchiveEventManager;
 import org.adempiere.archive.spi.ArchiveEventListenerAdapter;
 import org.adempiere.model.InterfaceWrapperHelper;
@@ -46,9 +45,7 @@ import com.google.common.annotations.VisibleForTesting;
 import de.metas.adempiere.model.I_C_Invoice;
 import de.metas.document.archive.DocOutBoundRecipient;
 import de.metas.document.archive.DocOutboundLogMailRecipientRegistry;
-import de.metas.document.archive.api.IBPartnerBL;
 import de.metas.document.archive.api.IDocOutboundDAO;
-import de.metas.document.archive.model.I_C_BPartner;
 import de.metas.document.archive.model.I_C_Doc_Outbound_Log;
 import de.metas.document.archive.model.I_C_Doc_Outbound_Log_Line;
 import de.metas.document.archive.model.X_C_Doc_Outbound_Log_Line;

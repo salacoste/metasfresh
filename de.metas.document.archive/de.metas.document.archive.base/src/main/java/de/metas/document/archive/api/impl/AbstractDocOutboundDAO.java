@@ -133,11 +133,10 @@ public abstract class AbstractDocOutboundDAO implements IDocOutboundDAO
 		queryBuilder.orderBy()
 				.addColumn(I_C_Doc_Outbound_Log_Line.COLUMN_C_Doc_Outbound_Log_Line_ID, Direction.Descending, Nulls.Last);
 	}
-	
+
 	@Override
 	public I_C_Doc_Outbound_Log retrieveLog(final IContextAware contextProvider, int bpartnerId, int AD_Table_ID)
 	{
-		
 		//
 		// Services
 		final IQueryBL queryBL = Services.get(IQueryBL.class);
@@ -146,19 +145,19 @@ public abstract class AbstractDocOutboundDAO implements IDocOutboundDAO
 		final IQueryBuilder<I_C_Doc_Outbound_Log> queryBuilder = queryBL.createQueryBuilder(I_C_Doc_Outbound_Log.class, contextProvider)
 				.addEqualsFilter(I_C_Doc_Outbound_Log.COLUMN_C_BPartner_ID, bpartnerId)
 				.addEqualsFilter(I_C_Doc_Outbound_Log.COLUMN_AD_Table_ID, AD_Table_ID);
-		
+
 		// Order by
-		final IQueryOrderBy queryOrderBy = Services.get(IQueryBL.class).createQueryOrderByBuilder(I_C_Doc_Outbound_Log.class)
-				.addColumn(I_C_Doc_Outbound_Log.COLUMNNAME_Created, false)
+		final IQueryOrderBy queryOrderBy = queryBL.createQueryOrderByBuilder(I_C_Doc_Outbound_Log.class)
+				.addColumnDescending(I_C_Doc_Outbound_Log.COLUMNNAME_Created)
 				.createQueryOrderBy();
 
 		return queryBuilder
 				.create()
 				.setOrderBy(queryOrderBy)
 				.first(I_C_Doc_Outbound_Log.class);
-		
+
 	}
-	
+
 	@Override
 	public final List<I_C_Doc_Outbound_Log> retrieveSelectedDocOutboundLogs(final Properties ctx, final int pInstanceId, final String trxName)
 	{

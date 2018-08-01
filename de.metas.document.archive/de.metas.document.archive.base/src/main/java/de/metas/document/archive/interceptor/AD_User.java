@@ -24,16 +24,20 @@ import de.metas.document.archive.model.I_C_Doc_Outbound_Log;
 @Interceptor(I_AD_User.class)
 class AD_User
 {
-	@ModelChange(timings = { ModelValidator.TYPE_AFTER_NEW, ModelValidator.TYPE_AFTER_CHANGE }, ifColumnsChanged = { I_AD_User.COLUMNNAME_IsInvoiceEmailEnabled, I_AD_User.COLUMNNAME_C_BPartner_ID })
+	@ModelChange( //
+			timings = { ModelValidator.TYPE_AFTER_NEW, ModelValidator.TYPE_AFTER_CHANGE }, //
+			ifColumnsChanged = { I_AD_User.COLUMNNAME_IsInvoiceEmailEnabled, I_AD_User.COLUMNNAME_C_BPartner_ID })
 	public void updateFlag(final I_AD_User user)
 	{
+		final IDocOutboundDAO docOutboundDAO = Services.get(IDocOutboundDAO.class);
+		final IADTableDAO adTableDAO = Services.get(IADTableDAO.class);
+		final IBPartnerBL bPartnerBL = Services.get(IBPartnerBL.class);
+
 		final I_C_BPartner bpartner = InterfaceWrapperHelper.create(user.getC_BPartner(), I_C_BPartner.class);
-		final boolean isInvoiceEmailEnabled = Services.get(IBPartnerBL.class).isInvoiceEmailEnabled(bpartner, user);
+		final boolean isInvoiceEmailEnabled = bPartnerBL.isInvoiceEmailEnabled(bpartner, user);
 
 		//
 		// retrieve latest log
-		final IDocOutboundDAO docOutboundDAO = Services.get(IDocOutboundDAO.class);
-		final IADTableDAO adTableDAO = Services.get(IADTableDAO.class);
 		final int AD_Table_ID = adTableDAO.retrieveTableId(I_C_Invoice.Table_Name);
 
 		final I_C_Doc_Outbound_Log docOutboundLogRecord = docOutboundDAO.retrieveLog(
@@ -44,7 +48,7 @@ class AD_User
 		{
 			return;
 		}
-		//
+
 		// update outbound log accordingly which will trigger a validator <code>C_Doc_Outbound_Log</code> which will create the notification
 		// update only for invoices
 		docOutboundLogRecord.setIsInvoiceEmailEnabled(isInvoiceEmailEnabled);

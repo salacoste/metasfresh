@@ -42,7 +42,7 @@ public class DocOutBoundRecipientRepository
 		return ofRecord(userRecord);
 	}
 
-	private DocOutBoundRecipient ofRecord(@NonNull final I_AD_User userRecord)
+	public DocOutBoundRecipient ofRecord(@NonNull final I_AD_User userRecord)
 	{
 		return DocOutBoundRecipient.builder()
 				.id(DocOutBoundRecipientId.ofRepoId(userRecord.getAD_User_ID()))

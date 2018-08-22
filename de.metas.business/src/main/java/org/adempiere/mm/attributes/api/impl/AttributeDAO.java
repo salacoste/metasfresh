@@ -207,7 +207,7 @@ public class AttributeDAO implements IAttributeDAO
 			return Services.get(IQueryBL.class)
 					.createQueryBuilder(I_M_AttributeValue.class, attribute)
 					.addEqualsFilter(I_M_AttributeValue.COLUMN_M_Attribute_ID, attribute.getM_Attribute_ID())
-					.addEqualsFilter(I_M_AttributeValue.COLUMN_Value, attributeValueId)
+					.addEqualsFilter(I_M_AttributeValue.COLUMN_Value, String.valueOf(attributeValueId.getRepoId()))
 					.create()
 					.firstOnly(I_M_AttributeValue.class);
 		}

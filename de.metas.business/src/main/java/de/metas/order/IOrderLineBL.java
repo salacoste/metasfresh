@@ -152,7 +152,7 @@ public interface IOrderLineBL extends ISingletonService
 	 */
 	I_M_PriceList_Version getPriceListVersion(I_C_OrderLine orderLine);
 
-	void updateLineNetAmt(I_C_OrderLine orderLine);
+	void updateLineNetAmt(org.compiere.model.I_C_OrderLine orderLine);
 
 	/**
 	 * Update the given <code>ol</code>'s {@link org.compiere.model.I_C_OrderLine#COLUMNNAME_QtyReserved QtyReserved}<br>
@@ -223,4 +223,6 @@ public interface IOrderLineBL extends ISingletonService
 	int getC_PaymentTerm_ID(org.compiere.model.I_C_OrderLine orderLine);
 
 	Map<OrderAndLineId, Quantity> getQtyToDeliver(Collection<OrderAndLineId> orderAndLineIds);
+
+	void updateProductDescriptionFromProductBOMIfConfigured(org.compiere.model.I_C_OrderLine orderLine);
 }

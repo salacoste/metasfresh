@@ -29,6 +29,7 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import org.adempiere.ad.security.UserRolePermissionsKey;
 import org.adempiere.plaf.AdempierePLAF;
 import org.adempiere.util.Services;
 import org.compiere.apps.ADialog;
@@ -45,12 +46,13 @@ import org.compiere.wf.MWFActivity;
 import org.slf4j.Logger;
 
 import de.metas.adempiere.form.IClientUI;
-import de.metas.document.engine.DefaultDocActionOptionsContext;
+import de.metas.document.DocTypeId;
+import de.metas.document.engine.DocActionOptionsContext;
 import de.metas.document.engine.IDocActionOptionsBL;
-import de.metas.document.engine.IDocActionOptionsContext;
 import de.metas.document.engine.IDocumentBL;
 import de.metas.document.engine.IDocumentBL.IDocActionItem;
 import de.metas.i18n.IMsgBL;
+import de.metas.lang.SOTrx;
 import de.metas.logging.LogManager;
 
 /**
@@ -235,21 +237,15 @@ public class VDocAction extends CDialog
 		 */
 		final Set<String> docActions;
 		{
-			Integer docTypeId = (Integer)m_mTab.getValue("C_DocType_ID");
-			if (docTypeId == null || docTypeId.intValue() <= 0)
-			{
-				docTypeId = (Integer)m_mTab.getValue("C_DocTypeTarget_ID");
-			}
-			log.debug("get doctype: " + docTypeId);
-
 			final Properties ctx = Env.getCtx();
-			final IDocActionOptionsContext optionsCtx = DefaultDocActionOptionsContext.builder(ctx)
-					.setTableName(m_mTab.getTableName())
-					.setDocStatus(DocStatus)
-					.setC_DocType_ID(docTypeId)
-					.setProcessing(Processing)
-					.setOrderType(OrderType)
-					.setIsSOTrx(IsSOTrx)
+			final DocActionOptionsContext optionsCtx = DocActionOptionsContext.builder()
+					.userRolePermissionsKey(UserRolePermissionsKey.of(ctx))
+					.tableName(m_mTab.getTableName())
+					.docStatus(DocStatus)
+					.docTypeId(getDocTypeId())
+					.processing(Processing)
+					.orderType(OrderType)
+					.soTrx(SOTrx.ofBoolean(IsSOTrx))
 					.build();
 			Services.get(IDocActionOptionsBL.class).updateDocActions(optionsCtx);
 			docActions = optionsCtx.getDocActions();
@@ -287,6 +283,17 @@ public class VDocAction extends CDialog
 			actionCombo.setSelectedItem(defaultDocActionItem);
 		}
 	}	// dynInit
+
+	private DocTypeId getDocTypeId()
+	{
+		Integer docTypeId = (Integer)m_mTab.getValue("C_DocType_ID");
+		if (docTypeId == null || docTypeId.intValue() <= 0)
+		{
+			docTypeId = (Integer)m_mTab.getValue("C_DocTypeTarget_ID");
+		}
+
+		return docTypeId != null ? DocTypeId.ofRepoIdOrNull(docTypeId) : null;
+	}
 
 	/**
 	 * Check Status Change
@@ -330,15 +337,13 @@ public class VDocAction extends CDialog
 	 */
 	private Map<String, IDocActionItem> getDocActionItemsIndexedByValue()
 	{
-		if(docActionItemsByValue == null)
+		if (docActionItemsByValue == null)
 		{
 			docActionItemsByValue = Services.get(IDocumentBL.class).retrieveDocActionItemsIndexedByValue();
 		}
 
 		return docActionItemsByValue;
 	}
-
-
 
 	/**
 	 * ActionListener
@@ -383,7 +388,7 @@ public class VDocAction extends CDialog
 	private boolean save()
 	{
 		final IDocActionItem selectedDocAction = actionCombo.getSelectedItem();
-		if(selectedDocAction == null)
+		if (selectedDocAction == null)
 		{
 			return false;
 		}

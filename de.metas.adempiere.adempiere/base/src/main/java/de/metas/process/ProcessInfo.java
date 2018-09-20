@@ -817,7 +817,10 @@ public final class ProcessInfo implements Serializable
 			final int adClientId = getAD_Client_ID();
 			final I_AD_Client processClient = clientDAO.retriveClient(ctx, adClientId);
 			Env.setContext(processCtx, Env.CTXNAME_AD_Client_ID, processClient.getAD_Client_ID());
-			Env.setContext(processCtx, Env.CTXNAME_AD_Language, processClient.getAD_Language());
+
+			final String contextLanguage = Env.getAD_Language(ctx);
+			final String languagetoUse = contextLanguage != null ? contextLanguage : processClient.getAD_Language();
+			Env.setContext(processCtx, Env.CTXNAME_AD_Language, languagetoUse);
 
 			//
 			// AD_Org, M_Warehouse
@@ -1399,12 +1402,13 @@ public final class ProcessInfo implements Serializable
 			return this;
 		}
 
+		/** Relevant for report processes.
+		 * {@code true} means that the system shall just if the report data shall just be returned*/
 		public boolean isPrintPreview()
 		{
-			final Boolean printPreview = this.printPreview;
-			if (printPreview != null)
+			if (this.printPreview != null)
 			{
-				return printPreview;
+				return this.printPreview;
 			}
 
 			if (Ini.isClient() && Ini.isPropertyBool(Ini.P_PRINTPREVIEW))

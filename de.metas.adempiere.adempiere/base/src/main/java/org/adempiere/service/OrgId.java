@@ -1,5 +1,7 @@
 package org.adempiere.service;
 
+import java.util.Optional;
+
 import org.adempiere.util.Check;
 import org.compiere.util.Env;
 
@@ -56,9 +58,19 @@ public class OrgId implements RepoIdAware
 		}
 	}
 
+	public static Optional<OrgId> optionalOfRepoId(final int repoId)
+	{
+		return Optional.ofNullable(ofRepoIdOrNull(repoId));
+	}
+
 	public static int toRepoId(final OrgId orgId)
 	{
 		return orgId != null ? orgId.getRepoId() : -1;
+	}
+
+	public static int toRepoIdOrAny(final OrgId orgId)
+	{
+		return orgId != null ? orgId.getRepoId() : ANY.repoId;
 	}
 
 	public static final OrgId ANY = new OrgId();

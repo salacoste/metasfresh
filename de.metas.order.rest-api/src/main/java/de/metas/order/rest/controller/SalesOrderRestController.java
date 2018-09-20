@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 
 import de.metas.Profiles;
 import de.metas.attachments.AttachmentEntry;
+import de.metas.attachments.AttachmentEntryId;
 import de.metas.attachments.IAttachmentBL;
 import de.metas.bpartner.BPartnerId;
 import de.metas.bpartner.service.IBPartnerDAO;
@@ -124,7 +125,8 @@ public class SalesOrderRestController
 
 		salesOrderFactory.newOrderLine()
 				.productId(productId)
-				.addQty(qty);
+				.addQty(qty)
+				.manualPrice(salesOrderLine.getPrice());
 	}
 
 	private JsonSalesOrder toSalesOrder(I_C_Order salesOrderRecord)
@@ -170,7 +172,7 @@ public class SalesOrderRestController
 	{
 		return JsonSalesOrderAttachment.builder()
 				.salesOrderId(String.valueOf(salesOrderId))
-				.id(entry.getId())
+				.id(AttachmentEntryId.getRepoId(entry.getId()))
 				.type(entry.getType())
 				.filename(entry.getFilename())
 				.contentType(entry.getContentType())

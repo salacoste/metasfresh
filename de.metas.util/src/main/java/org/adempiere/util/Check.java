@@ -339,6 +339,17 @@ public final class Check
 		return assumeNotEmpty(collection, defaultExClazz, assumptionMessage, params);
 	}
 
+	public static <T> T assumeNotEmpty(
+			final Optional<T> optional,
+			final String assumptionMessage,
+			final Object... params)
+	{
+		final boolean cond = optional.isPresent();
+
+		assume(cond, defaultExClazz, assumptionMessage, params);
+		return optional.get();
+	}
+
 	/**
 	 * Like {@link #assumeNotEmpty(Collection, String, Object...)}, but throws an instance of the given <code>exceptionClass</code> instead of the one which was set in
 	 * {@link #setDefaultExClass(Class)}.
@@ -416,6 +427,18 @@ public final class Check
 		if (valueInt <= 0)
 		{
 			throwOrLogEx(defaultExClazz, "Assumption failure: " + valueName + " > 0 but it was " + valueInt);
+		}
+		return valueInt;
+	}
+
+	public static int assumeGreaterThanZero(
+			final int valueInt,
+			final Class<? extends RuntimeException> exceptionClass,
+			final String valueName)
+	{
+		if (valueInt <= 0)
+		{
+			throwOrLogEx(exceptionClass, "Assumption failure: " + valueName + " > 0 but it was " + valueInt);
 		}
 		return valueInt;
 	}

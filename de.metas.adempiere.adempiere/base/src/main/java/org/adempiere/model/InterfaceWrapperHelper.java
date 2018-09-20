@@ -53,8 +53,10 @@ import org.adempiere.ad.wrapper.POJOInterfaceWrapperHelper;
 import org.adempiere.ad.wrapper.POJOLookupMap;
 import org.adempiere.ad.wrapper.POJOWrapper;
 import org.adempiere.exceptions.AdempiereException;
+import org.adempiere.service.OrgId;
 import org.adempiere.util.Check;
 import org.adempiere.util.GuavaCollectors;
+import org.adempiere.util.NumberUtils;
 import org.adempiere.util.Services;
 import org.adempiere.util.StringUtils;
 import org.adempiere.util.lang.IContextAware;
@@ -1119,6 +1121,18 @@ public class InterfaceWrapperHelper
 		}
 
 	}
+	
+	public static Optional<OrgId> getOrgId(final Object model)
+	{
+		final Object orgIdObj = getValue(model, "AD_Org_ID").orElse(null);
+		if(orgIdObj == null)
+		{
+			return Optional.empty();
+		}
+		
+		final int orgIdInt = NumberUtils.asInt(orgIdObj, -1);
+		return OrgId.optionalOfRepoId(orgIdInt);
+	}
 
 	public static <T> T getValueByColumnId(final Object model, final int adColumnId)
 	{
@@ -1711,5 +1725,10 @@ public class InterfaceWrapperHelper
 	public static boolean isCopy(final Object model)
 	{
 		return helpers.isCopy(model);
+	}
+	
+	public static boolean isCopying(final Object model)
+	{
+		return helpers.isCopying(model);
 	}
 }

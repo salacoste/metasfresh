@@ -10,19 +10,231 @@ Additional notes:
 
 Here come the actual release notes:
 
+# metasfresh 5.76
+## Features
+* metasfresh
+  * [#4605](https://github.com/metasfresh/metasfresh/issues/4605) Webui: Org window: hide the AD_Org_ID field
+    * Hiding the Organisation Field in Organisation Window.
+
+## Fixes
+
+# metasfresh 5.75
+## Features
+* metasfresh
+  * [#4507](https://github.com/metasfresh/metasfresh/issues/4507) Picked and Non-Picked Quantities Shipment generation
+  * [#4549](https://github.com/metasfresh/metasfresh/issues/4549) Sales Order Candidates REST API improvements
+  * [#4556](https://github.com/metasfresh/metasfresh/issues/4556) Show Product note as tooltip in order line
+  * [#4557](https://github.com/metasfresh/metasfresh/issues/4557) Improve BPartner Memo-Import
+  * [#4558](https://github.com/metasfresh/metasfresh/issues/4558) Show BPartner memo as tooltip in order
+  * [#4566](https://github.com/metasfresh/metasfresh/issues/4566) save AdempiereProcessor lastRun/nextRun timestamp out-of-trx
+  * [#4568](https://github.com/metasfresh/metasfresh/issues/4568) Add note field to invoice candidates
+  * [#4575](https://github.com/metasfresh/metasfresh/issues/4575) Allow custom, POReference-based document number
+  * [#4576](https://github.com/metasfresh/metasfresh/issues/4576) Introduce Warehouse Type
+  * [#4587](https://github.com/metasfresh/metasfresh/issues/4587) Allow custom PDF-creating code to be called via print-format
+  * [#4592](https://github.com/metasfresh/metasfresh/issues/4592) Number Format Exception
+  * [#4593](https://github.com/metasfresh/metasfresh/issues/4593) MailWorkpackageProcessor shall mail the AD_Archive's own PDF
+  * [#4594](https://github.com/metasfresh/metasfresh/issues/4594) WebUI: Outbound EMail Server (SMTP)
+    * New Window for the Outbound eMail Server Configuration in WebUI.
+  * [#4595](https://github.com/metasfresh/metasfresh/issues/4595) WebUI: Window EMail Server Routing
+    * New Window for the eMail Server Routing Configration in WebUI.
+  * [#4602](https://github.com/metasfresh/metasfresh/issues/4602) Cannot complete flatrate term conditions / transition in swing
+
+* metasfresh-webui-api
+  * [#1038](https://github.com/metasfresh/metasfresh-webui-api/issues/1038) Use user language for messages and errors in Forgot Password feature
+
+## Fixes
+
+* metasfresh
+  * [#4563](https://github.com/metasfresh/metasfresh/issues/4563) sometimes missing purchase candidates aren't created
+  * [#4579](https://github.com/metasfresh/metasfresh/issues/4579) msv3 - local purchase order is not created if remote order confirmation lacks deliveryDate
+  * [#4591](https://github.com/metasfresh/metasfresh/issues/4591) Printing problem on multi-org-system
+
+* metasfresh-webui-api
+  * [#1046](https://github.com/metasfresh/metasfresh-webui-api/issues/1046) Sometimes there are no available DocActions for Sales Orders
+  * [#1047](https://github.com/metasfresh/metasfresh-webui-api/issues/1047) Allow purchase disposition from sales order only for drafted sales orders
+
+* metasfresh-webui-frontend
+  * [#1944](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1944) Filter for attributes in picking terminal is not set on Y altough should be
+  
+# metasfresh 5.74
+## Features
+
+* metasfresh
+  * [#4411](https://github.com/metasfresh/metasfresh/issues/4411) New Dunning trigger for flatrate terms
+    * Extended Dunning Feature, now calculating the invoice due date from flatrate terms due date.
+  * [#4516](https://github.com/metasfresh/metasfresh/issues/4516) New Action "Copy Window"
+    * Enhance Application Dictionary Feature allowing to copy window configurations for webui.
+  * [#4524](https://github.com/metasfresh/metasfresh/issues/4524) Implement inbound E-Mail support
+    * New Feature that supports inbound eMail communication now.
+  * [#4541](https://github.com/metasfresh/metasfresh/issues/4541) Return also URL using function de_metas_endcustomer_fresh_reports.Docs_Generics_Org_Report
+    * Enhancing the function Docs_Generics_Org_Report, now returning the URL too.
+  * [#4550](https://github.com/metasfresh/metasfresh/issues/4550) Show Pricing Condition Indicator in Purchase Orders
+    * Including the Pricing Condition Indicator, known from Sales Orderline, in Purchase Orderline too.
+  * [#4554](https://github.com/metasfresh/metasfresh/issues/4554) Process to create dunning-PDF with concatenated invoice-PDFs
+    * New Process that allows to concatenate Dunning Documents with invoice PDF's.
+  * [#4561](https://github.com/metasfresh/metasfresh/issues/4561) QueryStatisticsLogger shall use logger instead of stderr
+    * Now Logging out SQL infos instead of printing them to stderr. 
+
+* metasfresh-webui-api
+  * [#1035](https://github.com/metasfresh/metasfresh-webui-api/issues/1035) Implement CORS support
+    * New feature, now supporting cross origin resource sharing.
+  * [#1037](https://github.com/metasfresh/metasfresh-webui-api/issues/1037) Advanced tooltip support
+    * New Functionality now supporting advanced tooltips in webui.
+
+* metasfresh-webui-frontend
+  * [#1908](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1908) Show multiple lines of a multi line text field in grid tab
+    * New feature that expands multiline fields when the row is selected.
+  * [#1953](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1953) Show field-description in tool-tip instead of field-caption
+    * New Feature that shows the Field Description instead of Caption when hovering in webui.
+
+## Fixes
+
+* metasfresh
+  * [#4528](https://github.com/metasfresh/metasfresh/issues/4528) Can not add new scale price on 5.71
+    * Fixes a Bug in Product Prices when recording Scale Prices.
+  * [#4552](https://github.com/metasfresh/metasfresh/issues/4552) AD_User is wrong in shipment schedule when using isDropShip
+    * Fixes the Shipment Contact User when using Drop Shipment in Sales Order.
+  * [#4560](https://github.com/metasfresh/metasfresh/issues/4560) MSV3 related fixes
+    * Fixes different Pharma MSV3 related issues.
+  * [#4572](https://github.com/metasfresh/metasfresh/issues/4572) Texts missing in cloned sales quotation
+    * Bugfix for Document Line descriptions when closing Sales Orders/ Quotations.
+
+* metasfresh-webui-api
+  * [#1040](https://github.com/metasfresh/metasfresh-webui-api/issues/1040) Some views are failing because #AD_User_ID was not found in context
+    * Bugfix in WebUI. Views with #AD_User_ID context are now not failing anymore.
+  * [#1043](https://github.com/metasfresh/metasfresh-webui-api/issues/1043) Open PDF from Printing Queue stopped working
+    * Fixes a Bug when opening a PDF from Printing Queue. Nw the PDF is opened again.
+
+* metasfresh-webui-frontend
+  * [#1898](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1898) No results when clicking on the looking glass button
+    * Fixes the cursor hovering magnifying glass icon. Now shown as default cursor.
+  * [#1931](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1931) Hint for shortcut [alt]+u not displayed anymore when hovering over the resp. button
+    * Now shows the Quickaction Tooltip again.
+  * [#1932](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1932) Mandatory Field not filled Error too early
+    * Fixes the UI Error Handling for mandatory Fields.
+  * [#1935](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1935) Tab shall be usable to navigate through the dropdown sequence in combined Business Partner Lookups
+    * Bugfix for the Tab Handling in combined Lookup Fields. Now it's possible to navigate with [tab] again.
+  * [#1944](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1944) Filter for attributes in picking terminal is not set on Y altough should be
+    * Fixes the initial settings of filter parameters in webui.
+
+# metasfresh 5.73
+## Features
+
+* metasfresh
+  * [#4475](https://github.com/metasfresh/metasfresh/issues/4475) Refund contract - add further options
+    * Extended Functionality added to Refund contracts enabling enhanced calculations.
+  * [#4511](https://github.com/metasfresh/metasfresh/issues/4511) Implement support for MSV3 version 1
+    * Extended MSV3 Functionality. Now allowing the usage of MSV3 version 1 too.
+  * [#4521](https://github.com/metasfresh/metasfresh/issues/4521) Don't create subscription shipment schedules for products that are no items
+    * Enhanced subscription handling. Not creating shipment schedules anymore for non item Products.
+  * [#4530](https://github.com/metasfresh/metasfresh/issues/4530) WebUI Adjustments for Country, Postal and City Window
+    * New Window in WebUI, allowing to maintain Country, Postals and Cities.
+  * [#4535](https://github.com/metasfresh/metasfresh/issues/4535) Set Sales Order Line's ProductDescription as Product BOM's description
+    * Enhanced Feature for Cable Trade Verticals. Now adding the BOM Components in Prodtct Description Field in Sales Orderline.
+  * [#4536](https://github.com/metasfresh/metasfresh/issues/4536) Introduce AD_Table.IsEnableRemoteCacheInvalidation
+    * New Configuration Feature in Application dictionary. It is now possible to enable/ disable the Remote Cache Invalidation for a Table.
+
+metasfresh-webui-api
+  * [#1032](https://github.com/metasfresh/metasfresh-webui-api/issues/1032) Window layout API shall provide text multilineText and multilineTextLines properties
+    * New Multiline Fature in WebUI Frontend. When selecting grid lines with multiline Fields, than the lineheight is automatically expanded.
+
+## Fixes
+* metasfresh
+  * [#4520](https://github.com/metasfresh/metasfresh/issues/4520) Requests cannot be saved
+    * Fixes a Bug in Requests, now being able to save Requests again in WebUI.
+  * [#4523](https://github.com/metasfresh/metasfresh/issues/4523) Fix problems with invoice candidate creation from subscription flatrate terms
+    * Bugfix in subscription contract handling, now creating corresponding invoice candidates again.
+  * [#4526](https://github.com/metasfresh/metasfresh/issues/4526) Filter for attributes in picking terminal shall be set by default
+    * Bugfix for the extended User Filter Features. Now possible to set default user filter parms again.
+  * [#4537](https://github.com/metasfresh/metasfresh/issues/4537) Invoice candiate handler BL creates lock with non-unique owner
+    * Internal Bugfix for the Invoice Candidate handler Business Logic.
+  * [#4538](https://github.com/metasfresh/metasfresh/issues/4538) WebUI: New Translation Window for R_RequestType
+    * New Window that allows to maintain Request Type Translations in WebUI.
+
+* metasfresh-webui-api
+  * [#438](https://github.com/metasfresh/metasfresh-webui-api/issues/438) Minor: error for wizard with no picture
+    * Fixes a Bug in Organisation Setup Wizard when no Logo Image is present.
+
+# metasfresh 5.72
+## Features
+* metasfresh
+  * [#4448](https://github.com/metasfresh/metasfresh/issues/4448) Advanced BLs to create inventory lines
+    * Extended Business Logic for the creation of Inventory lines. Now able to generate the inventorylines based on product value and last inventory count of products in a warehouse locator.
+  * [#4450](https://github.com/metasfresh/metasfresh/issues/4450) Tablet optimized inventory-counting-window
+    * New window that allows the invntory counting via a tablet sized interface.
+  * [#4482](https://github.com/metasfresh/metasfresh/issues/4482) Support Doctype Text templates also on purchase order
+    * Adopting the existing doctype text support to purchase orders.
+  * [#4492](https://github.com/metasfresh/metasfresh/issues/4492) Project Status and Product Category Trl
+    * New Translation Feature for Project Status and Product Category.
+  * [#4494](https://github.com/metasfresh/metasfresh/issues/4494) Projecttype Org Validation
+    * New Validation Rule for Projecttype, now respecting the records organisation.
+  * [#4498](https://github.com/metasfresh/metasfresh/issues/4498) Make fields in explicit user filter mandatory or optional
+    * Extended Filter functionality allowing to set
+  * [#4501](https://github.com/metasfresh/metasfresh/issues/4501) LogicExpressionEvaluator: improve error message in case something went wrong
+    * Improvement of Error messages.
+  * [#4517](https://github.com/metasfresh/metasfresh/issues/4517) Extend Sales Order REST API to support price and support all product values
+    * Extended Sales Order REST API, now supporting prices and product values.
+
+* metasfresh-webui-frontend
+  * [#1878](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1878) Forgot password feature
+    * New Feature that allows a User to reset a forgotten password.
+
+## Fixes
+* metasfresh
+  * [#4483](https://github.com/metasfresh/metasfresh/issues/4483) Payment allocation form does not show invoices
+    * Fix for the Payment Allocation Form, now showing filtered invoices again.
+  * [#4499](https://github.com/metasfresh/metasfresh/issues/4499) Cannot create letter
+    * Bugfix. Fixes the creation of Letters in WebUI modal overlay.
+  * [#4504](https://github.com/metasfresh/metasfresh/issues/4504) Mandatory logic broken for C_FlatrateTerm.C_Currency_ID
+    * Fixes the evaluation of the mandatory logic for the Currency Field in Flatrate Term window.
+  * [#4506](https://github.com/metasfresh/metasfresh/issues/4506) Compensation Group's subtotals gets broken after setting/changing the flatrate conditions
+    * Bugfix for the calculation of the subtotal in compensation groups. Now these are recalculated when adjusting corresponding flatrate conditions.
+  * [#4509](https://github.com/metasfresh/metasfresh/issues/4509) NPE in Compensation Groups creation
+    * Bugfix for a Null Pointer Exception when creating compensation groups in Sales Order Lines.
+  * [#4514](https://github.com/metasfresh/metasfresh/issues/4514) Include sales orders REST API to metasfresh-dist/serverRoot
+    * Invluding the REST API for Sales Orders to default API environment.
+
+* metasfresh-webui-frontend
+  * [#1188](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1188) Home and End button move caret in text fields
+    * Bugfix for the Keyboard support of [home] and [end] keys in Text Fields.
+  * [#1463](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1463) Unable to execute any quick actions in Firefox
+    * Fixes a Bug that occurred with quickactions in non-webkit browsers.
+  * [#1578](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1578) Applied filter params sometimes not displayed in filter
+    * Minor Bugfix for the filtering in WebUI window.
+  * [#1589](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1589) Included tab: when refreshing via websocket event the sort/order is not preserved
+    * Improvement of the Websocket refresh behavior when manipulating records in combination with changed order.
+  * [#1707](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1707) Red line is missing when a document was not saved
+    * Improvement of the Error Handling for Records that cannot be saved.
+  * [#1872](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1872) [alt]+u not working as before
+    * Fix for the Shortcut [alt]+u.
+  * [#1923](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1923) Sequence of Dropdowns in combined Business Partner Lookups not working
+    * Bugfix for the automatic workflow sequence of combined Lookup Fields.
+  * [#1927](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1927) No additional filter parameter from a dropdown selectable when filter has a default value set
+    * Fixes the Filtering in WebUI for filters that have a default filter criteria set. Now it's possible to also set other filter criteria again.
+  * [#1934](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1934) Cannot run processes
+    * Bugfix for running actions with parameters.
+  * [#1948](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1948) Filter Attribute Label not set properly
+    * Fixes the Filter Button Label.
+    
+
 # metasfresh 5.71
 ## Features
 * metasfresh
   * [#4459](https://github.com/metasfresh/metasfresh/issues/4459) Material Cockpit - show stock details
+    * New Feature in Material Cockpit, now showing the Stock details and Locators.
   * [#4491](https://github.com/metasfresh/metasfresh/issues/4491) Introduce Window Tab's Internal Name
+    * New internal Functionality in Application Dictionary that allows to define internal Names of window Tabs for automatic Testing purpose.
 
 ## Fix
 * metasfresh-webui-api
   * [#865](https://github.com/metasfresh/metasfresh-webui-api/issues/865) Org * not selectable in WebUI but in Java Client
+    * Fix of API now allowing to record Org * in Records.
   * [#1027](https://github.com/metasfresh/metasfresh-webui-api/issues/1027) Cannot set attributes for product after receipt in manufacturing
+    * Bugfix for the setting of Attributes after doing a Material Receipt.
 
 * metasfresh-webui-frontend
   * [#1672](https://github.com/metasfresh/metasfresh-webui-frontend/issues/1672) Location dropdown opens again when opening the batch entry
+    * Fixes the Lookup behavior in Sales Order Batch entry.
 
 
 # metasfresh 5.70

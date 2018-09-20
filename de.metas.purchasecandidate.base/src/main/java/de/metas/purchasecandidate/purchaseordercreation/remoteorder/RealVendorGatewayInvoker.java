@@ -1,15 +1,16 @@
 package de.metas.purchasecandidate.purchaseordercreation.remoteorder;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import org.adempiere.service.OrgId;
 import org.adempiere.util.GuavaCollectors;
+import org.adempiere.util.Loggables;
 import org.adempiere.util.lang.ITableRecordReference;
 import org.adempiere.util.lang.impl.TableRecordReference;
 import org.compiere.model.I_C_UOM;
-import org.compiere.util.TimeUtil;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -86,7 +87,7 @@ public class RealVendorGatewayInvoker implements VendorGatewayInvoker
 		final PurchaseOrderRequest purchaseOrderRequest = PurchaseOrderRequest.builder()
 				.orgId(orgId.getRepoId())
 				.vendorId(vendorId.getRepoId())
-				.purchaseOrderRequestItems(requestItem2Candidate.keySet())
+				.items(requestItem2Candidate.keySet())
 				.build();
 
 		final RemotePurchaseOrderCreated purchaseOrderResponse = vendorGatewayService.placePurchaseOrder(purchaseOrderRequest);
@@ -124,8 +125,20 @@ public class RealVendorGatewayInvoker implements VendorGatewayInvoker
 
 				final I_C_UOM uom = uomsById.get(remotePurchaseOrderCreatedItem.getUomId());
 
+				LocalDateTime confirmedDeliveryDate = remotePurchaseOrderCreatedItem.getConfirmedDeliveryDateOrNull();
+				if (confirmedDeliveryDate == null)
+				{
+					Loggables
+							.get()
+							.addLog("The current remotePurchaseOrderCreatedItem has no confirmedDeliveryDate; "
+									+ "falling back to the purchase candidate's purchaseDatePromised={}; remotePurchaseOrderCreatedItem={}",
+									correspondingRequestCandidate.getPurchaseDatePromised(),
+									remotePurchaseOrderCreatedItem);
+					confirmedDeliveryDate = correspondingRequestCandidate.getPurchaseDatePromised();
+				}
+
 				final PurchaseOrderItem purchaseOrderItem = correspondingRequestCandidate.createOrderItem()
-						.datePromised(TimeUtil.asLocalDateTime(remotePurchaseOrderCreatedItem.getConfirmedDeliveryDate()))
+						.datePromised(confirmedDeliveryDate)
 						.purchasedQty(Quantity.of(remotePurchaseOrderCreatedItem.getConfirmedOrderQuantity(), uom))
 						.remotePurchaseOrderId(remotePurchaseOrderCreatedItem.getRemotePurchaseOrderId())
 						.transactionReference(transactionReference)

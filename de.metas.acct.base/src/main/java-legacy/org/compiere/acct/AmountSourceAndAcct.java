@@ -50,10 +50,16 @@ final class AmountSourceAndAcct
 				.build();
 	}
 
-	public static final AmountSourceAndAcct ZERO = of(BigDecimal.ZERO, BigDecimal.ZERO);
+	public static final AmountSourceAndAcct ZERO = new AmountSourceAndAcct();
 
 	private final BigDecimal amtSource;
 	private final BigDecimal amtAcct;
+
+	private AmountSourceAndAcct()
+	{
+		amtSource = BigDecimal.ZERO;
+		amtAcct = BigDecimal.ZERO;
+	}
 
 	private AmountSourceAndAcct(final Builder builder)
 	{

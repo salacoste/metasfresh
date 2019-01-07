@@ -36,14 +36,12 @@ import org.adempiere.model.InterfaceWrapperHelper;
 import org.adempiere.plaf.MetasfreshGlassPane;
 import org.compiere.apps.AEnv;
 import org.compiere.apps.AMenu;
-import org.compiere.apps.Help;
 import org.compiere.apps.WindowMenu;
 import org.compiere.apps.search.InfoWindowMenuBuilder;
 import org.compiere.model.I_AD_Form;
 import org.compiere.model.MTreeNode;
 import org.compiere.swing.CFrame;
 import org.compiere.util.Env;
-import org.compiere.util.SwingUtils;
 import org.compiere.util.Util;
 import org.slf4j.Logger;
 
@@ -109,10 +107,10 @@ public class FormFrame extends CFrame
 	private final int	m_WindowNo;
 	/** The GlassPane           	*/
 	private final MetasfreshGlassPane m_glassPane;
-	/**	Description					*/
-	private String		m_Description = null;
-	/**	Help						*/
-	private String		m_Help = null;
+//	/**	Description					*/
+//	private String		m_Description = null;
+//	/**	Help						*/
+//	private String		m_Help = null;
 	/**	Menu Bar					*/
 	private final JMenuBar 	menuBar = new JMenuBar();
 	/**	The Panel to be displayed	*/
@@ -183,7 +181,6 @@ public class FormFrame extends CFrame
 		//      Help
 		JMenu mHelp = AEnv.getMenu("Help");
 		menuBar.add(mHelp);
-		AEnv.addMenuItem("Help", null, KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0),	mHelp, this);
 		AEnv.addMenuItem("Online", null, null, mHelp, this);
 		AEnv.addMenuItem("EMailSupport", null, null, mHelp, this);
 		AEnv.addMenuItem("About", null, null, mHelp, this);
@@ -304,8 +301,8 @@ public class FormFrame extends CFrame
 
 		final I_AD_Form formTrl = InterfaceWrapperHelper.translate(form, I_AD_Form.class);
 		p_AD_Form_ID = form.getAD_Form_ID(); // metas: moved this line before init because we need to provide actual form ID - BF3212894
-		m_Description = formTrl.getDescription();
-		m_Help = formTrl.getHelp();
+//		m_Description = formTrl.getDescription();
+//		m_Help = formTrl.getHelp();
 
 		final Properties ctx = InterfaceWrapperHelper.getCtx(form);
 		Env.setContext(ctx, m_WindowNo, Env.CTXNAME_WindowName, formTrl.getName());
@@ -358,25 +355,9 @@ public class FormFrame extends CFrame
 		String cmd = e.getActionCommand();
 		if (cmd.equals("End"))
 			dispose();
-		else if (cmd.equals("Help"))
-			actionHelp();
 		else if (!AEnv.actionPerformed(cmd, m_WindowNo, this))
 			log.error("Not handeled=" + cmd);
 	}   //  actionPerformed
-
-	/**
-	 *	Show Help
-	 */
-	private void actionHelp()
-	{
-		StringBuffer sb = new StringBuffer();
-		if (m_Description != null && m_Description.length() > 0)
-			sb.append("<h2>").append(m_Description).append("</h2>");
-		if (m_Help != null && m_Help.length() > 0)
-			sb.append("<p>").append(m_Help);
-		Help hlp = new Help (SwingUtils.getFrame(this), this.getTitle(), sb.toString());
-		hlp.setVisible(true);
-	}	//	actionHelp
 
 
 	/*************************************************************************

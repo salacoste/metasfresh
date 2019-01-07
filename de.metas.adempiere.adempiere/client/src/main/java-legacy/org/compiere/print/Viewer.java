@@ -1008,7 +1008,6 @@ public class Viewer extends CFrame
 		chooser.addChoosableFileFilter(new ExtensionFileFilter("ps", msgBL.getMsg(m_ctx, "FilePS")));
 		chooser.addChoosableFileFilter(new ExtensionFileFilter("xml", msgBL.getMsg(m_ctx, "FileXML")));
 		chooser.addChoosableFileFilter(new ExtensionFileFilter("pdf", msgBL.getMsg(m_ctx, "FilePDF")));
-		chooser.addChoosableFileFilter(new ExtensionFileFilter("html", msgBL.getMsg(m_ctx, "FileHTML")));
 		chooser.addChoosableFileFilter(new ExtensionFileFilter("txt", msgBL.getMsg(m_ctx, "FileTXT")));
 		chooser.addChoosableFileFilter(new ExtensionFileFilter("ssv", msgBL.getMsg(m_ctx, "FileSSV")));
 		chooser.addChoosableFileFilter(new ExtensionFileFilter("csv", msgBL.getMsg(m_ctx, "FileCSV")));
@@ -1056,8 +1055,6 @@ public class Viewer extends CFrame
 				m_reportEngine.createCSV(outFile, ';', m_reportEngine.getPrintFormat().getLanguage());
 			else if (ext.equals("txt"))
 				m_reportEngine.createCSV(outFile, '\t', m_reportEngine.getPrintFormat().getLanguage());
-			else if (ext.equals("html") || ext.equals("htm"))
-				m_reportEngine.createHTML(outFile, false, m_reportEngine.getPrintFormat().getLanguage());
 			else if(excelFileExtensions.contains(ext))
 			{
 				m_reportEngine.createXLS(outFile, m_reportEngine.getPrintFormat().getLanguage());

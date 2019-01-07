@@ -21,10 +21,6 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
-import org.slf4j.Logger;
-
-import de.metas.i18n.Msg;
-import de.metas.logging.LogManager;
 
 import javax.swing.JSplitPane;
 
@@ -34,9 +30,11 @@ import org.compiere.swing.CDialog;
 import org.compiere.swing.CPanel;
 import org.compiere.swing.CTextArea;
 import org.compiere.swing.CTextPane;
-import org.slf4j.Logger;
-import de.metas.logging.LogManager;
 import org.compiere.util.Env;
+import org.slf4j.Logger;
+
+import de.metas.i18n.Msg;
+import de.metas.logging.LogManager;
 
 /**
  * 	Application Chat
@@ -71,8 +69,6 @@ public class AChat extends CDialog
 		log.info("ID=" + CM_Chat_ID
 			+ ", Table=" + AD_Table_ID + ", Record=" + Record_ID);
 		//
-		m_WindowNo = WindowNo;
-		//
 		try
 		{
 			staticInit();
@@ -98,12 +94,8 @@ public class AChat extends CDialog
 		newText.requestFocus();
 	}	//	Attachment
 
-	/**	Window No				*/
-	private int				m_WindowNo;
 	/** Attachment				*/
 	private MChat			m_chat;
-	/** Change					*/
-	private boolean			m_change = false;
 	/**	Logger					*/
 	private static Logger log = LogManager.getLogger(AChat.class);
 
@@ -142,7 +134,7 @@ public class AChat extends CDialog
 	 */
 	private void loadChat()
 	{
-		String text = m_chat.getHistory(MChat.CONFIDENTIALTYPE_Internal).toString();
+		final String text = m_chat.getHistoryAsHtmlString(MChat.CONFIDENTIALTYPE_Internal);
 		historyText.setText(text);
 	}	//	loadChat
 	

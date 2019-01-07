@@ -1,18 +1,18 @@
 /******************************************************************************
- * Product: Adempiere ERP & CRM Smart Business Solution                       *
- * Copyright (C) 1999-2006 ComPiere, Inc. All Rights Reserved.                *
- * This program is free software; you can redistribute it and/or modify it    *
- * under the terms version 2 of the GNU General Public License as published   *
- * by the Free Software Foundation. This program is distributed in the hope   *
+ * Product: Adempiere ERP & CRM Smart Business Solution *
+ * Copyright (C) 1999-2006 ComPiere, Inc. All Rights Reserved. *
+ * This program is free software; you can redistribute it and/or modify it *
+ * under the terms version 2 of the GNU General Public License as published *
+ * by the Free Software Foundation. This program is distributed in the hope *
  * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied *
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.           *
- * See the GNU General Public License for more details.                       *
- * You should have received a copy of the GNU General Public License along    *
- * with this program; if not, write to the Free Software Foundation, Inc.,    *
- * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.                     *
- * For the text or an alternative of this public license, you may reach us    *
- * ComPiere, Inc., 2620 Augustine Dr. #245, Santa Clara, CA 95054, USA        *
- * or via info@compiere.org or http://www.compiere.org/license.html           *
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+ * See the GNU General Public License for more details. *
+ * You should have received a copy of the GNU General Public License along *
+ * with this program; if not, write to the Free Software Foundation, Inc., *
+ * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA. *
+ * For the text or an alternative of this public license, you may reach us *
+ * ComPiere, Inc., 2620 Augustine Dr. #245, Santa Clara, CA 95054, USA *
+ * or via info@compiere.org or http://www.compiere.org/license.html *
  *****************************************************************************/
 package org.adempiere.serverRoot.servlet;
 
@@ -43,26 +43,6 @@ import org.adempiere.ad.trx.api.ITrx;
 import org.adempiere.ad.trx.api.ITrxManager;
 import org.adempiere.serverRoot.util.WebEnv;
 import org.adempiere.serverRoot.util.WebUtil;
-import org.apache.ecs.Element;
-import org.apache.ecs.HtmlColor;
-import org.apache.ecs.xhtml.a;
-import org.apache.ecs.xhtml.b;
-import org.apache.ecs.xhtml.body;
-import org.apache.ecs.xhtml.br;
-import org.apache.ecs.xhtml.font;
-import org.apache.ecs.xhtml.form;
-import org.apache.ecs.xhtml.h2;
-import org.apache.ecs.xhtml.hr;
-import org.apache.ecs.xhtml.input;
-import org.apache.ecs.xhtml.label;
-import org.apache.ecs.xhtml.option;
-import org.apache.ecs.xhtml.p;
-import org.apache.ecs.xhtml.select;
-import org.apache.ecs.xhtml.strong;
-import org.apache.ecs.xhtml.table;
-import org.apache.ecs.xhtml.td;
-import org.apache.ecs.xhtml.th;
-import org.apache.ecs.xhtml.tr;
 import org.compiere.Adempiere;
 import org.compiere.db.AdempiereDatabase;
 import org.compiere.db.CConnection;
@@ -85,6 +65,9 @@ import de.metas.Profiles;
 import de.metas.cache.CacheMgt;
 import de.metas.logging.LogManager;
 import de.metas.util.Services;
+import j2html.tags.ContainerTag;
+
+import static j2html.TagCreator.*;
 
 /**
  * Server Monitor
@@ -170,59 +153,67 @@ public class ServerMonitor extends HttpServlet
 	private boolean processLogParameter(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException
 	{
-		final String serverID = WebUtil.getParameter(request, "Log");
-		if (serverID == null || serverID.length() == 0)
+		final String serverId = WebUtil.getParameter(request, "Log");
+		if (serverId == null || serverId.isEmpty())
 		{
 			return false;
 		}
-		log.info("ServerID=" + serverID);
-		final AdempiereServer server = m_serverMgr.getServer(serverID);
+
+		final AdempiereServer server = m_serverMgr.getServer(serverId);
 		if (server == null)
 		{
 			m_message = new p();
-			m_message.addElement(new strong("Server not found: "));
-			m_message.addElement(serverID);
+			m_message.with(new strong("Server not found: "));
+			m_message.with(serverId);
 			return false;
 		}
 
 		final WebDoc doc = WebDoc.create("Server Monitor Log");
+
 		// Body
-		final body b = doc.getBody();
+		final ContainerTag body = doc.getBody();
+		{
+			//
+			final ContainerTag para = p();
+			final ContainerTag link = a("Return")
+					.attr("href", NAME + "#" + serverId);
+			para.with(link);
+			body.with(para);
+			//
+			body.with(h2(server.getName()));
+		}
+
 		//
-		final p para = new p();
-		a link = new a(NAME + "#" + serverID, "Return");
-		para.addElement(link);
-		b.addElement(para);
-		//
-		b.addElement(new h2(server.getName()));
-		//
-		final table table = newPropertiesTable();
+		final ContainerTag table = newPropertiesTable();
 
 		// Header
-		tr line = new tr();
-		line.addElement(new th().addElement("Created"));
-		line.addElement(new th().addElement("Summary"));
-		// line.addElement(new th().addElement("Error"));
-		line.addElement(new th().addElement("Reference"));
-		line.addElement(new th().addElement("TextMsg"));
-		// line.addElement(new th().addElement("Description"));
-		table.addElement(line);
-
-		final AdempiereProcessorLog[] logs = server.getLogs();
-		for (int i = 0; i < logs.length; i++)
 		{
-			final AdempiereProcessorLog pLog = logs[i];
-			line = new tr();
-			line.addElement(new td().addElement(WebEnv.getCellContent(pLog.getCreated())));
-			line.addElement(new td().addElement(WebEnv.getCellContent(pLog.getSummary())));
-			line.addElement(new td().addElement(WebEnv.getCellContent(pLog.getReference())));
-			line.addElement(new td().addElement(WebEnv.getCellContent(pLog.getTextMsg())));
-			table.addElement(line);
+			final ContainerTag line = tr();
+			line.with(th().withText("Created"));
+			line.with(th().withText("Summary"));
+			// line.with(th().withText("Error"));
+			line.with(th().withText("Reference"));
+			line.with(th().withText("TextMsg"));
+			// line.with(th().withText("Description"));
+			table.with(line);
+		}
+
+		for (final AdempiereProcessorLog pLog : server.getLogs())
+		{
+			final ContainerTag line = tr();
+			line.with(td().withText(WebEnv.getCellContent(pLog.getCreated())));
+			line.with(td().withText(WebEnv.getCellContent(pLog.getSummary())));
+			line.with(td().withText(WebEnv.getCellContent(pLog.getReference())));
+			line.with(td().withText(WebEnv.getCellContent(pLog.getTextMsg())));
+			table.with(line);
 		}
 		//
-		b.addElement(table);
-		link = new a("#top", "Top");
-		b.addElement(link);
+		{
+			body.with(table);
+			final ContainerTag link = a("Top")
+					.attr("href", "#top");
+			body.with(link);
+		}
 
 		// fini
 		WebUtil.createResponse(request, response, this, null, doc, false);
@@ -250,8 +241,8 @@ public class ServerMonitor extends HttpServlet
 		if (server == null)
 		{
 			m_message = new p();
-			m_message.addElement(new strong("Server not found: "));
-			m_message.addElement(serverID);
+			m_message.with(new strong("Server not found: "));
+			m_message.with(serverID);
 			return false;
 		}
 		//
@@ -278,7 +269,7 @@ public class ServerMonitor extends HttpServlet
 			final boolean start = action.startsWith("Start");
 			m_message = new p();
 			final String msg = (start ? "Started" : "Stopped") + ": ";
-			m_message.addElement(new strong(msg));
+			m_message.with(new strong(msg));
 			//
 			final String serverID = action.substring(action.indexOf('_') + 1);
 			boolean ok = false;
@@ -292,7 +283,7 @@ public class ServerMonitor extends HttpServlet
 				{
 					ok = m_serverMgr.stopAll();
 				}
-				m_message.addElement("All");
+				m_message.with("All");
 			}
 			else
 			{
@@ -300,8 +291,8 @@ public class ServerMonitor extends HttpServlet
 				if (server == null)
 				{
 					m_message = new p();
-					m_message.addElement(new strong("Server not found: "));
-					m_message.addElement(serverID);
+					m_message.with(new strong("Server not found: "));
+					m_message.with(serverID);
 					return;
 				}
 				else
@@ -314,17 +305,17 @@ public class ServerMonitor extends HttpServlet
 					{
 						ok = m_serverMgr.stop(serverID);
 					}
-					m_message.addElement(server.getName());
+					m_message.with(server.getName());
 				}
 			}
-			m_message.addElement(ok ? " - OK" : " - Error!");
+			m_message.with(ok ? " - OK" : " - Error!");
 		}
 		catch (Exception e)
 		{
 			m_message = new p();
-			m_message.addElement(new strong("Error processing parameter: " + action));
-			m_message.addElement(new br());
-			m_message.addElement(e.toString());
+			m_message.with(new strong("Error processing parameter: " + action));
+			m_message.with(new br());
+			m_message.with(e.toString());
 		}
 	}	// processActionParameter
 
@@ -415,11 +406,11 @@ public class ServerMonitor extends HttpServlet
 				log.warn("Did not find File: " + logFileName);
 				return false;
 			}
-//			if (logFile.length() == 0)
-//			{
-//				log.warn("File Length=0: " + logFileName);
-//				return false;
-//			}
+			// if (logFile.length() == 0)
+			// {
+			// log.warn("File Length=0: " + logFileName);
+			// return false;
+			// }
 
 			if (LogManager.isActiveLogFile(logFile))
 			{
@@ -494,7 +485,7 @@ public class ServerMonitor extends HttpServlet
 		if (AD_Client_ID < 0)
 		{
 			m_message = new p();
-			m_message.addElement("No EMail: " + email);
+			m_message.with("No EMail: " + email);
 			return false;
 		}
 
@@ -504,7 +495,7 @@ public class ServerMonitor extends HttpServlet
 		log.info("Test: " + client);
 
 		m_message = new p();
-		m_message.addElement(client.getName() + ": " + client.testEMail());
+		m_message.with(client.getName() + ": " + client.testEMail());
 		return false;
 	}	// processEMailParameter
 
@@ -539,34 +530,33 @@ public class ServerMonitor extends HttpServlet
 			if (tableName == null || tableName.length() == 0)
 			{
 				CacheMgt.get().reset();
-				m_message.addElement("Cache Reset: All");
+				m_message.with("Cache Reset: All");
 			}
 			else if (record_ID == null || record_ID.isEmpty())
 			{
 				CacheMgt.get().reset(tableName);
-				m_message.addElement("Cache Reset: " + tableName);
+				m_message.with("Cache Reset: " + tableName);
 			}
 			else
 			{
 				CacheMgt.get().reset(tableName, Integer.parseInt(record_ID));
-				m_message.addElement("Cache Reset: " + tableName + ", Record_ID=" + record_ID);
+				m_message.with("Cache Reset: " + tableName + ", Record_ID=" + record_ID);
 			}
 		}
 		catch (Exception e)
 		{
 			log.error("Error", e);
-			m_message.addElement("Error: " + e.toString());
+			m_message.with("Error: " + e.toString());
 		}
 		return false;	// continue
 	}	// processEMailParameter
 
-	private final table newPropertiesTable()
+	private final ContainerTag newPropertiesTable()
 	{
-		table table = new table();
-		table.setClass("propertiesTable");
-		table.setCellSpacing(2);
-		table.setCellPadding(2);
-		return table;
+		return table()
+				.attr("class", "propertiesTable")
+				.attr("cellSpacing", 2)
+				.attr("cellPadding", 2);
 	}
 
 	/**************************************************************************
@@ -587,76 +577,76 @@ public class ServerMonitor extends HttpServlet
 		// Message
 		if (m_message != null)
 		{
-			bb.addElement(new hr());
-			bb.addElement(m_message);
-			bb.addElement(new hr());
+			bb.with(new hr());
+			bb.with(m_message);
+			bb.with(new hr());
 		}
 
 		// Summary
 		table table = newPropertiesTable();
 		//
 		tr line = new tr();
-		line.addElement(new th().addElement(Adempiere.getName()));
-		line.addElement(new td().addElement(Adempiere.getBuildAndDateVersion()));
-		table.addElement(line);
+		line.with(new th().with(Adempiere.getName()));
+		line.with(new td().with(Adempiere.getBuildAndDateVersion()));
+		table.with(line);
 		line = new tr();
-		line.addElement(new th().addElement(Adempiere.getImplementationVendor()));
-		line.addElement(new td().addElement(Adempiere.getImplementationVersion()));
-		table.addElement(line);
+		line.with(new th().with(Adempiere.getImplementationVendor()));
+		line.with(new td().with(Adempiere.getImplementationVersion()));
+		table.with(line);
 		line = new tr();
-		line.addElement(new th().addElement("Manager"));
-		line.addElement(new td().addElement(WebEnv.getCellContent(m_serverMgr.getDescription())));
-		table.addElement(line);
+		line.with(new th().with("Manager"));
+		line.with(new td().with(WebEnv.getCellContent(m_serverMgr.getDescription())));
+		table.with(line);
 		line = new tr();
-		line.addElement(new th().addElement("Start - Elapsed"));
-		line.addElement(new td().addElement(WebEnv.getCellContent(m_serverMgr.getStartTime()) + " - " + TimeUtil.formatElapsed(m_serverMgr.getStartTime())));
-		table.addElement(line);
+		line.with(new th().with("Start - Elapsed"));
+		line.with(new td().with(WebEnv.getCellContent(m_serverMgr.getStartTime()) + " - " + TimeUtil.formatElapsed(m_serverMgr.getStartTime())));
+		table.with(line);
 		line = new tr();
-		line.addElement(new th().addElement("Servers"));
-		line.addElement(new td().addElement(WebEnv.getCellContent(m_serverMgr.getServerCount())));
-		table.addElement(line);
+		line.with(new th().with("Servers"));
+		line.with(new td().with(WebEnv.getCellContent(m_serverMgr.getServerCount())));
+		table.with(line);
 		line = new tr();
-		line.addElement(new th().addElement("Last Updated"));
-		line.addElement(new td().addElement(new Timestamp(System.currentTimeMillis()).toString()));
-		table.addElement(line);
-		bb.addElement(table);
+		line.with(new th().with("Last Updated"));
+		line.with(new td().with(new Timestamp(System.currentTimeMillis()).toString()));
+		table.with(line);
+		bb.with(table);
 		//
 		p para = new p();
 		a link = new a(NAME + "?Action=Start_All", "Start All");
-		para.addElement(link);
-		para.addElement(" - ");
+		para.with(link);
+		para.with(" - ");
 		link = new a(NAME + "?Action=Stop_All", "Stop All");
-		para.addElement(link);
-		para.addElement(" - ");
+		para.with(link);
+		para.with(" - ");
 		link = new a(NAME, "Refresh");
-		para.addElement(link);
-		bb.addElement(para);
+		para.with(link);
+		bb.with(para);
 
 		// ***** Server Links *****
-		bb.addElement(new hr());
+		bb.with(new hr());
 		para = new p();
 		final AdempiereServer[] servers = m_serverMgr.getAll();
 		for (int i = 0; i < servers.length; i++)
 		{
 			if (i > 0)
 			{
-				para.addElement(new br());
+				para.with(new br());
 			}
 			final AdempiereServer server = servers[i];
 			link = new a("#" + server.getServerID(), server.getName());
-			para.addElement(link);
+			para.with(link);
 			font status = null;
 			if (server.isAlive())
 			{
-				status = new font().setColor(HtmlColor.GREEN).addElement(" (Running)");
+				status = new font().setColor(HtmlColor.GREEN).with(" (Running)");
 			}
 			else
 			{
-				status = new font().setColor(HtmlColor.RED).addElement(" (Stopped)");
+				status = new font().setColor(HtmlColor.RED).with(" (Stopped)");
 			}
-			para.addElement(status);
+			para.with(status);
 		}
-		bb.addElement(para);
+		bb.with(para);
 
 		// **** Log Management ****
 		createLogMgtPage(bb);
@@ -665,9 +655,9 @@ public class ServerMonitor extends HttpServlet
 		for (int i = 0; i < servers.length; i++)
 		{
 			final AdempiereServer server = servers[i];
-			bb.addElement(new hr());
-			bb.addElement(new a().setName(server.getServerID()));
-			bb.addElement(new h2(server.getName()));
+			bb.with(new hr());
+			bb.with(new a().setName(server.getServerID()));
+			bb.with(new h2(server.getName()));
 			//
 			table = newPropertiesTable();
 			// Status
@@ -682,20 +672,20 @@ public class ServerMonitor extends HttpServlet
 				link = new a(NAME + "?Action=Stop_" + server.getServerID(), msg);
 				if (server.isSleeping())
 				{
-					line.addElement(new th().addElement("Sleeping"));
-					line.addElement(new td().addElement(link));
+					line.with(new th().with("Sleeping"));
+					line.with(new td().with(link));
 				}
 				else
 				{
-					line.addElement(new th().addElement("Running"));
-					line.addElement(new td().addElement(link));
+					line.with(new th().with("Running"));
+					line.with(new td().with(link));
 				}
-				table.addElement(line);
+				table.with(line);
 				line = new tr();
-				line.addElement(new th().addElement("Start - Elapsed"));
-				
+				line.with(new th().with("Start - Elapsed"));
+
 				final Timestamp startTime = server.getStartTime();
-				line.addElement(new td().addElement(WebEnv.getCellContent(startTime) + " - " + TimeUtil.formatElapsed(startTime)));
+				line.with(new td().with(WebEnv.getCellContent(startTime) + " - " + TimeUtil.formatElapsed(startTime)));
 			}
 			else
 			{
@@ -704,52 +694,52 @@ public class ServerMonitor extends HttpServlet
 				{
 					msg += " (Interrupted)";
 				}
-				line.addElement(new th().addElement("Not Started"));
+				line.with(new th().with("Not Started"));
 				link = new a(NAME + "?Action=Start_" + server.getServerID(), msg);
-				line.addElement(new td().addElement(link));
+				line.with(new td().with(link));
 			}
-			table.addElement(line);
+			table.with(line);
 			//
 			line = new tr();
-			line.addElement(new th().addElement("Description"));
-			line.addElement(new td().addElement(WebEnv.getCellContent(server.getDescription())));
-			table.addElement(line);
+			line.with(new th().with("Description"));
+			line.with(new td().with(WebEnv.getCellContent(server.getDescription())));
+			table.with(line);
 			//
 			line = new tr();
-			line.addElement(new th().addElement("Last Run"));
-			line.addElement(new td().addElement(WebEnv.getCellContent(server.getDateLastRun())));
-			table.addElement(line);
+			line.with(new th().with("Last Run"));
+			line.with(new td().with(WebEnv.getCellContent(server.getDateLastRun())));
+			table.with(line);
 			line = new tr();
-			line.addElement(new th().addElement("Info"));
-			line.addElement(new td().addElement(WebEnv.getCellContent(server.getServerInfo())));
-			table.addElement(line);
+			line.with(new th().with("Info"));
+			line.with(new td().with(WebEnv.getCellContent(server.getServerInfo())));
+			table.with(line);
 			//
 			line = new tr();
-			line.addElement(new th().addElement("Next Run"));
+			line.with(new th().with("Next Run"));
 			final td td = new td();
-			td.addElement(WebEnv.getCellContent(server.getDateNextRun(false)));
-			td.addElement(" - ");
+			td.with(WebEnv.getCellContent(server.getDateNextRun(false)));
+			td.with(" - ");
 			link = new a(NAME + "?RunNow=" + server.getServerID(), "(Run Now)");
-			td.addElement(link);
-			line.addElement(td);
-			table.addElement(line);
+			td.with(link);
+			line.with(td);
+			table.with(line);
 			//
 			line = new tr();
-			line.addElement(new th().addElement("Statistics"));
-			line.addElement(new td().addElement(server.getStatistics()));
-			table.addElement(line);
+			line.with(new th().with("Statistics"));
+			line.with(new td().with(server.getStatistics()));
+			table.with(line);
 			//
 
 			// Add table to Body
-			bb.addElement(table);
+			bb.with(table);
 			link = new a("#top", "Top");
-			bb.addElement(link);
-			bb.addElement(" - ");
+			bb.with(link);
+			bb.with(" - ");
 			link = new a(NAME + "?Log=" + server.getServerID(), "Log");
-			bb.addElement(link);
-			bb.addElement(" - ");
+			bb.with(link);
+			bb.with(" - ");
 			link = new a(NAME, "Refresh");
-			bb.addElement(link);
+			bb.with(link);
 		}
 
 		// fini
@@ -761,29 +751,29 @@ public class ServerMonitor extends HttpServlet
 	 *
 	 * @param body body
 	 */
-	private void createLogMgtPage(final body body)
+	private void createLogMgtPage(final ContainerTag body)
 	{
 		final Properties ctx = Env.newTemporaryCtx();
 
-		body.addElement(new hr());
+		body.with(hr());
 
 		{
 			// Ini Parameters
-			final table table = newPropertiesTable();
-			body.addElement(table);
+			final ContainerTag table = newPropertiesTable();
+			body.with(table);
 
 			//
 			final I_AD_System system = Services.get(ISystemBL.class).get(ctx);
 			{
-				tr line = new tr();
-				line.addElement(new th().addElement(system.getDBAddress()));
-				line.addElement(new td().addElement(Ini.getMetasfreshHome()));
-				table.addElement(line);
+				ContainerTag line = tr();
+				line.with(th(system.getDBAddress()));
+				line.with(td(Ini.getMetasfreshHome()));
+				table.with(line);
 			}
 
 			// OS + Name
 			{
-				tr line = new tr();
+				ContainerTag line = tr();
 				String info = System.getProperty("os.name")
 						+ " " + System.getProperty("os.version");
 				final String s = System.getProperty("sun.os.patch.level");
@@ -791,74 +781,83 @@ public class ServerMonitor extends HttpServlet
 				{
 					info += " (" + s + ")";
 				}
-				line.addElement(new th().addElement(info));
+				line.with(th(info));
 				info = system.getName();
 				if (system.getCustomPrefix() != null)
 				{
 					info += " (" + system.getCustomPrefix() + ")";
 				}
-				line.addElement(new td().addElement(info));
-				table.addElement(line);
+				line.with(td(info));
+				table.with(line);
 			}
 
 			// Java + email
 			{
-				tr line = new tr();
+				final ContainerTag line = tr();
 				String info = System.getProperty("java.vm.name")
 						+ " " + System.getProperty("java.vm.version");
-				line.addElement(new th().addElement(info));
-				line.addElement(new td().addElement(system.getUserName()));
-				table.addElement(line);
+				line.with(th(info));
+				line.with(td(system.getUserName()));
+				table.with(line);
 			}
 
 			// DB + Instance
 			{
-				tr line = new tr();
+				final ContainerTag line = tr();
 				final CConnection cc = CConnection.get();
 				final AdempiereDatabase db = cc.getDatabase();
 				String info = db.getDescription();
-				line.addElement(new th().addElement(info));
-				line.addElement(new td().addElement(cc.getConnectionURL()));
-				// line.addElement(new td().addElement(system.getDBInstance()));
-				table.addElement(line);
-				// Processors/Support
-				line = new tr();
-				line.addElement(new th().addElement("Processor/Support"));
-				line.addElement(new td().addElement(system.getNoProcessors() + "/" + system.getSupportUnits()));
-				table.addElement(line);
+				line.with(th(info));
+				line.with(td(cc.getConnectionURL()));
+				// line.with(new td().with(system.getDBInstance()));
+				table.with(line);
+			}
+
+			// Processors/Support
+			{
+				final ContainerTag line = tr();
+				line.with(th("Processor/Support"));
+				line.with(td(system.getNoProcessors() + "/" + system.getSupportUnits()));
+				table.with(line);
 			}
 
 			// Memory
 			{
-				tr line = new tr();
 				final MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
-				line.addElement(new th().addElement("VM Memory"));
-				line.addElement(new td().addElement(new CMemoryUsage(memory.getNonHeapMemoryUsage()).toString()));
-				table.addElement(line);
-				line = new tr();
-				line.addElement(new th().addElement("Heap Memory"));
-				line.addElement(new td().addElement(new CMemoryUsage(memory.getHeapMemoryUsage()).toString()));
-				table.addElement(line);
+
+				final ContainerTag line = tr();
+				line.with(th("VM Memory"));
+				line.with(td(new CMemoryUsage(memory.getNonHeapMemoryUsage()).toString()));
+				table.with(line);
+			}
+			{
+				final MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
+
+				final ContainerTag line = tr();
+				line.with(th("Heap Memory"));
+				line.with(td(new CMemoryUsage(memory.getHeapMemoryUsage()).toString()));
+				table.with(line);
 			}
 
 			// Runtime
 			{
-				tr line = new tr();
 				final RuntimeMXBean rt = ManagementFactory.getRuntimeMXBean();
-				line.addElement(new th().addElement("Runtime " + rt.getName()));
-				line.addElement(new td().addElement(TimeUtil.formatElapsed(rt.getUptime())));
-				table.addElement(line);
+
+				final ContainerTag line = tr();
+				line.with(th("Runtime " + rt.getName()));
+				line.with(td(TimeUtil.formatElapsed(rt.getUptime())));
+				table.with(line);
 			}
 
 			// Threads
 			{
-				tr line = new tr();
+				final ContainerTag line = tr();
 				final ThreadMXBean th = ManagementFactory.getThreadMXBean();
-				line.addElement(new th().addElement("Threads " + th.getThreadCount()));
-				line.addElement(new td().addElement("Peak=" + th.getPeakThreadCount()
+				line.with(th("Threads " + th.getThreadCount()));
+				line.with(td("Peak=" + th.getPeakThreadCount()
 						+ ", Demons=" + th.getDaemonThreadCount()
 						+ ", Total=" + th.getTotalStartedThreadCount()));
-				table.addElement(line);
+				table.with(line);
 			}
 
 			// Transactions
@@ -867,11 +866,10 @@ public class ServerMonitor extends HttpServlet
 			{
 				if (trx != null && trx.isActive())
 				{
-					tr line = new tr();
-					line.addElement(new th().addElement("Active Transaction "));
-					line.addElement(new td().addElement("Name=" + trx.getTrxName()
-							+ ", StartTime=" + trx.getStartTime()));
-					table.addElement(line);
+					final ContainerTag line = tr();
+					line.with(th("Active Transaction "));
+					line.with(td("Name=" + trx.getTrxName() + ", StartTime=" + trx.getStartTime()));
+					table.with(line);
 				}
 			}
 
@@ -880,9 +878,9 @@ public class ServerMonitor extends HttpServlet
 
 			// Trace Level
 			{
-				tr line = new tr();
-				line.addElement(new th().addElement(new label("TraceLevel").addElement("Trace Log Level")));
-				final form myForm = new form(NAME, form.METHOD_POST, form.ENC_DEFAULT);
+				final ContainerTag line = tr();
+				line.with(th(label("TraceLevel").withText("Trace Log Level")));
+				final form myForm = form(NAME, form.METHOD_POST, form.ENC_DEFAULT);
 				// LogLevel Selection
 
 				final List<Level> logLevels = LogManager.getAvailableLoggingLevels();
@@ -892,17 +890,17 @@ public class ServerMonitor extends HttpServlet
 					final Level logLevel = logLevels.get(i);
 					final String logLevelName = logLevel.toString();
 					options[i] = new option(logLevelName);
-					options[i].addElement(logLevelName);
+					options[i].with(logLevelName);
 					if (LogManager.isLevel(logLevel))
 					{
 						options[i].setSelected(true);
 					}
 				}
 				final select sel = new select("TraceLevel", options);
-				myForm.addElement(sel);
-				myForm.addElement(new input(input.TYPE_SUBMIT, "Set", "Set"));
-				line.addElement(new td().addElement(myForm));
-				table.addElement(line);
+				myForm.with(sel);
+				myForm.with(new input(input.TYPE_SUBMIT, "Set", "Set"));
+				line.with(new td().with(myForm));
+				table.with(line);
 			}
 
 			// Current Log File
@@ -910,27 +908,27 @@ public class ServerMonitor extends HttpServlet
 			if (logFile != null)
 			{
 				tr line = new tr();
-				line.addElement(new th().addElement("Trace File"));
-				
+				line.with(new th().with("Trace File"));
+
 				final String logFilePath = logFile.getAbsolutePath();
 				final a href = new a(NAME + "?Trace=" + encodeURLValue(logFilePath), logFile.getName());
 				href.setTarget("_blank");
 				href.setTitle(logFilePath);
-				line.addElement(new td().addElement(href).addElement(" (" + bytesToString(logFile.length()) + ")"));
-				table.addElement(line);
+				line.with(new td().with(href).with(" (" + bytesToString(logFile.length()) + ")"));
+				table.with(line);
 			}
 
 			// Log File options (rotate, delete all)
 			{
 				tr line = new tr();
-				line.addElement(new td().addElement(new a(NAME + "?Trace=ROTATE", "Rotate Trace Log")));
-				line.addElement(new td().addElement(new a(NAME + "?Trace=DELETE", "Delete all Trace Logs")));
-				table.addElement(line);
+				line.with(new td().with(new a(NAME + "?Trace=ROTATE", "Rotate Trace Log")));
+				line.with(new td().with(new a(NAME + "?Trace=DELETE", "Delete all Trace Logs")));
+				table.with(line);
 			}
 		}
 
 		// List Log Files
-		body.addElement(createLogMgtPage_LogFiles());
+		body.with(createLogMgtPage_LogFiles());
 
 		// Clients and Web Stores
 		{
@@ -938,68 +936,68 @@ public class ServerMonitor extends HttpServlet
 			//
 			tr line = new tr();
 			final MClient[] clients = MClient.getAll(ctx);
-			line.addElement(new th().addElement("Client #" + clients.length + " - EMail Test:"));
+			line.with(new th().with("Client #" + clients.length + " - EMail Test:"));
 			p p = new p();
 			for (int i = 0; i < clients.length; i++)
 			{
 				final MClient client = clients[i];
 				if (i > 0)
 				{
-					p.addElement(" - ");
+					p.with(" - ");
 				}
-				p.addElement(new a(NAME + "?EMail=" + client.getAD_Client_ID(), client.getName()));
+				p.with(new a(NAME + "?EMail=" + client.getAD_Client_ID(), client.getName()));
 			}
 			if (clients.length == 0)
 			{
-				p.addElement("&nbsp;");
+				p.with("&nbsp;");
 			}
-			line.addElement(new td().addElement(p));
-			table.addElement(line);
+			line.with(new td().with(p));
+			table.with(line);
 			//
 			line = new tr();
 			final MStore[] wstores = MStore.getActive();
-			line.addElement(new th().addElement("Active Web Stores #" + wstores.length));
+			line.with(new th().with("Active Web Stores #" + wstores.length));
 			p = new p();
 			for (int i = 0; i < wstores.length; i++)
 			{
 				final MStore store = wstores[i];
 				if (i > 0)
 				{
-					p.addElement(" - ");
+					p.with(" - ");
 				}
 				a a = new a(store.getWebContext(), store.getName());
 				a.setTarget("t" + i);
-				p.addElement(a);
+				p.with(a);
 			}
 			if (wstores.length == 0)
 			{
-				p.addElement("&nbsp;");
+				p.with("&nbsp;");
 			}
-			line.addElement(new td().addElement(p));
-			table.addElement(line);
+			line.with(new td().with(p));
+			table.with(line);
 			//
-			body.addElement(table);
+			body.with(table);
 		}
 	}	// createLogMgtPage
 
-	private void createLogMgtPage_CacheReset(final table table)
+	private void createLogMgtPage_CacheReset(final ContainerTag table)
 	{
 		if (!isAllowCacheReset())
 		{
 			return;
 		}
 
-		tr line = new tr();
-		line.addElement(new th().addElement(CacheMgt.get().toStringX()));
-		line.addElement(new td().addElement(new a(NAME + "?CacheReset=Yes", "Reset Cache")));
-		table.addElement(line);
-
+		ContainerTag line = tr();
+		line.with(th(CacheMgt.get().toStringX()));
+		line.with(td(a("Reset Cache")
+				.attr("href", NAME + "?CacheReset=Yes")));
+		table.with(line);
 	}
 
-	private Element createLogMgtPage_LogFiles()
+	private ContainerTag createLogMgtPage_LogFiles()
 	{
-		final p containerElement = new p();
-		containerElement.addElement(new b("All Log Files: "));
+		final ContainerTag containerElement = p();
+		containerElement.with(b("All Log Files: "));
 
 		// All in dir
 		boolean first = true;
@@ -1013,23 +1011,24 @@ public class ServerMonitor extends HttpServlet
 
 			if (!first)
 			{
-				containerElement.addElement(" - ");
+				containerElement.withText(" - ");
 			}
 
 			final String fileName = logFile.getAbsolutePath();
-			final a link = new a(NAME + "?Trace=" + encodeURLValue(fileName), logFile.getName());
-			link.setTarget("_blank");
-			link.setTitle(fileName);
-			containerElement.addElement(link);
+			final ContainerTag link = a(logFile.getName())
+					.attr("href", NAME + "?Trace=" + encodeURLValue(fileName))
+					.attr("target", "_blank")
+					.attr("title", fileName);
+			containerElement.with(link);
 			final long sizeBytes = logFile.length();
-			containerElement.addElement(" (" + bytesToString(sizeBytes) + ")");
+			containerElement.withText(" (" + bytesToString(sizeBytes) + ")");
 
 			first = false;
 		}
 
 		return containerElement;
 	}
-	
+
 	private static final String encodeURLValue(final String value)
 	{
 		try

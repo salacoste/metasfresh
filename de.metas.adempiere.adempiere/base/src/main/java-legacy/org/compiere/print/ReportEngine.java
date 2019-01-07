@@ -27,7 +27,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URI;
 import java.sql.PreparedStatement;
@@ -55,14 +54,6 @@ import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.pdf.Document;
 import org.adempiere.print.export.PrintDataExcelExporter;
 import org.adempiere.service.ISysConfigBL;
-import org.apache.ecs.XhtmlDocument;
-import org.apache.ecs.xhtml.a;
-import org.apache.ecs.xhtml.link;
-import org.apache.ecs.xhtml.script;
-import org.apache.ecs.xhtml.table;
-import org.apache.ecs.xhtml.td;
-import org.apache.ecs.xhtml.th;
-import org.apache.ecs.xhtml.tr;
 import org.compiere.model.I_C_DunningRunEntry;
 import org.compiere.model.I_C_Invoice;
 import org.compiere.model.I_C_Order;
@@ -75,7 +66,6 @@ import org.compiere.model.MTable;
 import org.compiere.model.PrintInfo;
 import org.compiere.print.layout.LayoutEngine;
 import org.compiere.util.DB;
-import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.Ini;
 import org.eevolution.model.I_DD_Order;
@@ -95,7 +85,6 @@ import de.metas.process.ProcessInfo;
 import de.metas.util.Check;
 import de.metas.util.FileUtil;
 import de.metas.util.Services;
-import de.metas.util.StringUtils;
 import lombok.NonNull;
 
 /**
@@ -521,194 +510,6 @@ public class ReportEngine implements PrintServiceAttributeListener
 	{
 		return m_printerName;
 	}	// getPrinterName
-
-	/**************************************************************************
-	 * Create HTML File
-	 *
-	 * @param file file
-	 * @param onlyTable if false create complete HTML document
-	 * @param language optional language - if null the default language is used to format nubers/dates
-	 * @return true if success
-	 */
-	public boolean createHTML(File file, boolean onlyTable, Language language)
-	{
-		return createHTML(file, onlyTable, language, null);
-	}
-
-	/**************************************************************************
-	 * Create HTML File
-	 *
-	 * @param file file
-	 * @param onlyTable if false create complete HTML document
-	 * @param language optional language - if null the default language is used to format nubers/dates
-	 * @param extension optional extension for html output
-	 * @return true if success
-	 */
-	public boolean createHTML(File file, boolean onlyTable, Language language, IHTMLExtension extension)
-	{
-		try
-		{
-			Language lang = language;
-			if (lang == null)
-			{
-				lang = Language.getLoginLanguage();
-			}
-			Writer fw = new OutputStreamWriter(new FileOutputStream(file, false), Ini.getCharset()); // teo_sarca: save using adempiere charset [ 1658127 ]
-			return createHTML(new BufferedWriter(fw), onlyTable, lang, extension);
-		}
-		catch (FileNotFoundException fnfe)
-		{
-			log.error("(f) - " + fnfe.toString());
-		}
-		catch (Exception e)
-		{
-			log.error("(f)", e);
-		}
-		return false;
-	}	// createHTML
-
-	/**
-	 * Write HTML to writer
-	 *
-	 * @param writer writer
-	 * @param onlyTable if false create complete HTML document
-	 * @param language optional language - if null nubers/dates are not formatted
-	 * @return true if success
-	 */
-	public boolean createHTML(Writer writer, boolean onlyTable, Language language)
-	{
-		return createHTML(writer, onlyTable, language, null);
-	}
-
-	/**
-	 * Write HTML to writer
-	 *
-	 * @param writer writer
-	 * @param onlyTable if false create complete HTML document
-	 * @param language optional language - if null numbers/dates are not formatted
-	 * @param extension optional extension for html output
-	 * @return true if success
-	 */
-	public boolean createHTML(Writer writer, boolean onlyTable, Language language, IHTMLExtension extension)
-	{
-		final PrintData m_printData = getPrintData();
-
-		try
-		{
-			String cssPrefix = extension != null ? extension.getClassPrefix() : null;
-			if (Check.isEmpty(cssPrefix, true))
-				cssPrefix = null;
-
-			table table = new table();
-			if (cssPrefix != null)
-				table.setClass(cssPrefix + "-table");
-			//
-			// for all rows (-1 = header row)
-			for (int row = -1; row < m_printData.getRowCount(); row++)
-			{
-				tr tr = new tr();
-				table.addElement(tr);
-				if (row != -1)
-				{
-					m_printData.setRowIndex(row);
-					if (extension != null)
-					{
-						extension.extendRowElement(tr, m_printData);
-					}
-				}
-				// for all columns
-				for (int col = 0; col < m_printFormat.getItemCount(); col++)
-				{
-					MPrintFormatItem item = m_printFormat.getItem(col);
-					if (item.isPrinted())
-					{
-						// header row
-						if (row == -1)
-						{
-							th th = new th();
-							tr.addElement(th);
-							th.addElement(StringUtils.maskHTML(item.getPrintName(language)));
-						}
-						else
-						{
-							td td = new td();
-							tr.addElement(td);
-							Object obj = m_printData.getNode(new Integer(item.getAD_Column_ID()));
-							if (obj == null)
-								td.addElement("&nbsp;");
-							else if (obj instanceof PrintDataElement)
-							{
-								PrintDataElement pde = (PrintDataElement)obj;
-								String value = pde.getValueDisplay(language);	// formatted
-								if (pde.getColumnName().endsWith("_ID") && extension != null)
-								{
-									// link for column
-									a href = new a("javascript:void(0)");
-									href.setID(pde.getColumnName() + "_" + row + "_a");
-									td.addElement(href);
-									href.addElement(StringUtils.maskHTML(value));
-									if (cssPrefix != null)
-										href.setClass(cssPrefix + "-href");
-
-									extension.extendIDColumn(row, td, href, pde);
-
-								}
-								else
-								{
-									td.addElement(StringUtils.maskHTML(value));
-								}
-								if (cssPrefix != null)
-								{
-									if (DisplayType.isNumeric(pde.getDisplayType()))
-										td.setClass(cssPrefix + "-number");
-									else if (DisplayType.isDate(pde.getDisplayType()))
-										td.setClass(cssPrefix + "-date");
-									else
-										td.setClass(cssPrefix + "-text");
-								}
-							}
-							else if (obj instanceof PrintData)
-							{
-								// ignore contained Data
-							}
-							else
-								log.error("Element not PrintData(Element) " + obj.getClass());
-						}
-					}	// printed
-				}	// for all columns
-			}	// for all rows
-
-			//
-			PrintWriter w = new PrintWriter(writer);
-			if (onlyTable)
-				table.output(w);
-			else
-			{
-				XhtmlDocument doc = new XhtmlDocument();
-				doc.appendBody(table);
-				if (extension.getStyleURL() != null)
-				{
-					link l = new link(extension.getStyleURL(), "stylesheet", "text/css");
-					doc.appendHead(l);
-				}
-				if (extension.getScriptURL() != null)
-				{
-					script jslink = new script();
-					jslink.setLanguage("javascript");
-					jslink.setSrc(extension.getScriptURL());
-					doc.appendHead(jslink);
-				}
-				doc.output(w);
-			}
-			w.flush();
-			w.close();
-		}
-		catch (Exception e)
-		{
-			log.error("(w)", e);
-		}
-		return false;
-	}	// createHTML
 
 	/**************************************************************************
 	 * Create CSV File

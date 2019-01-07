@@ -398,7 +398,7 @@ public class APanel extends CPanel
 	public AppsAction aLock;
 	// Local (added to toolbar)
 	@SuppressWarnings("unused")
-	private AppsAction aReport, aEnd, aHome, aHelp,
+	private AppsAction aReport, aEnd, aHome,
 			aPreference,
 			aOnline, aMailSupport, aAbout, aExit,
 			aDeleteSelection;
@@ -509,7 +509,6 @@ public class APanel extends CPanel
 		// Help
 		final JMenu mHelp = AEnv.getMenu("Help");
 		menuBar.add(mHelp);
-		aHelp = addAction("Help", mHelp, KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), false, false);
 		aOnline = addAction("Online", mHelp, null, false, false);
 		aMailSupport = addAction("EMailSupport", mHelp, null, false, false);
 		aAbout = addAction("About", mHelp, null, false, false);
@@ -601,7 +600,6 @@ public class APanel extends CPanel
 				aToggleGridColumns.setEnabled(false);
 				toolBar.add(aToggleGridColumns.getButton());
 			}
-			toolBar.add(aHelp.getButton());			// F1
 		}
 	}	// createMenu
 
@@ -2073,9 +2071,6 @@ public class APanel extends CPanel
 			}
 			else if (aWinSize != null && cmd.equals(aWinSize.getName()))
 				cmd_winSize();
-			// Help
-			else if (cmd.equals(aHelp.getName()))
-				cmd_help();
 			// General Commands (Environment)
 			else if (WindowMenu.ShowAllWindows_ActionName.equals(cmd))
 				m_WindowMenu.expose();
@@ -2718,15 +2713,6 @@ public class APanel extends CPanel
 			}
 		}
 	}	// cmd_history
-
-	/**
-	 * Help
-	 */
-	private void cmd_help()
-	{
-		Help hlp = new Help(getCurrentFrame(), this.getTitle(), m_mWorkbench.getMWindow(getWindowIndex()));
-		hlp.setVisible(true);
-	}	// cmd_help
 
 	/**
 	 * Close this screen - after save

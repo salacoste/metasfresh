@@ -1,28 +1,30 @@
 /******************************************************************************
- * Product: Adempiere ERP & CRM Smart Business Solution                       *
- * Copyright (C) 1999-2006 ComPiere, Inc. All Rights Reserved.                *
- * This program is free software; you can redistribute it and/or modify it    *
- * under the terms version 2 of the GNU General Public License as published   *
- * by the Free Software Foundation. This program is distributed in the hope   *
+ * Product: Adempiere ERP & CRM Smart Business Solution *
+ * Copyright (C) 1999-2006 ComPiere, Inc. All Rights Reserved. *
+ * This program is free software; you can redistribute it and/or modify it *
+ * under the terms version 2 of the GNU General Public License as published *
+ * by the Free Software Foundation. This program is distributed in the hope *
  * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied *
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.           *
- * See the GNU General Public License for more details.                       *
- * You should have received a copy of the GNU General Public License along    *
- * with this program; if not, write to the Free Software Foundation, Inc.,    *
- * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.                     *
- * For the text or an alternative of this public license, you may reach us    *
- * ComPiere, Inc., 2620 Augustine Dr. #245, Santa Clara, CA 95054, USA        *
- * or via info@compiere.org or http://www.compiere.org/license.html           *
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+ * See the GNU General Public License for more details. *
+ * You should have received a copy of the GNU General Public License along *
+ * with this program; if not, write to the Free Software Foundation, Inc., *
+ * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA. *
+ * For the text or an alternative of this public license, you may reach us *
+ * ComPiere, Inc., 2620 Augustine Dr. #245, Santa Clara, CA 95054, USA *
+ * or via info@compiere.org or http://www.compiere.org/license.html *
  *****************************************************************************/
 package org.compiere.server;
 
 import java.sql.Timestamp;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 import org.adempiere.ad.session.ISessionBL;
 import org.adempiere.ad.session.MFSession;
+import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.server.rpl.api.IIMPProcessorBL;
 import org.adempiere.server.rpl.api.IIMPProcessorDAO;
 import org.adempiere.server.rpl.interfaces.I_IMP_Processor;
@@ -89,7 +91,7 @@ public final class AdempiereServerMgr
 	/** Context */
 	private final Properties _ctx = Env.getCtx();
 	/** Start */
-	private final Timestamp m_start = new Timestamp(System.currentTimeMillis());
+	private final ZonedDateTime m_start = ZonedDateTime.now();
 
 	/**
 	 * Start Environment
@@ -103,7 +105,7 @@ public final class AdempiereServerMgr
 		// Set Session
 		final MFSession session = Services.get(ISessionBL.class).getCurrentOrCreateNewSession(getCtx());
 		session.setWebSessionId("Server");
-		
+
 		return true;
 	}	// startEnvironment
 
@@ -159,7 +161,7 @@ public final class AdempiereServerMgr
 			server.setPriority(Thread.NORM_PRIORITY - 2);
 			m_servers.add(server);
 		}
-		
+
 		// ImportProcessor - @Trifon
 		final List<I_IMP_Processor> importModels = Services.get(IIMPProcessorDAO.class).retrieveAllActive(ctx);
 		for (final I_IMP_Processor importModel : importModels)
@@ -219,7 +221,7 @@ public final class AdempiereServerMgr
 				{
 					continue;
 				}
-				
+
 				// Wait until dead
 				if (server.isInterrupted())
 				{
@@ -293,36 +295,44 @@ public final class AdempiereServerMgr
 	/**
 	 * Start Server if not started yet
 	 * 
-	 * @param serverID server ID
+	 * @param serverId server ID
 	 * @return true if started
 	 */
-	public boolean start(final String serverID)
+	public boolean start(final String serverId)
 	{
-		AdempiereServer server = getServer(serverID);
+		AdempiereServer server = getServer(serverId);
 		if (server == null)
-			return false;
+		{
+			throw new AdempiereException("No server found for " + serverId);
+		}
 		if (server.isAlive())
+		{
 			return true;
+		}
 
 		try
 		{
 			// replace
-			int index = m_servers.indexOf(server);
+			final int index = m_servers.indexOf(server);
 			server = AdempiereServer.create(server.getModel());
 			if (server == null)
+			{
 				m_servers.remove(index);
+			}
 			else
+			{
 				m_servers.set(index, server);
+			}
+
 			server.start();
 			server.setPriority(Thread.NORM_PRIORITY - 2);
 			Thread.yield();
 		}
-		catch (Exception e)
+		catch (final Exception ex)
 		{
-			log.error("Server=" + serverID, e);
-			return false;
+			throw new AdempiereException("Failed starting " + serverId, ex);
 		}
-		log.info(server.toString());
+
 		AdempiereServerGroup.get().dump();
 		return server.isAlive();
 	}	// startIt
@@ -576,9 +586,9 @@ public final class AdempiereServerMgr
 	 *
 	 * @return start date
 	 */
-	public Timestamp getStartTime()
+	public ZonedDateTime getStartTime()
 	{
-		return new Timestamp(m_start.getTime());
+		return m_start;
 	}	// getStartTime
 
 }	// AdempiereServerMgr

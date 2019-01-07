@@ -1,5 +1,9 @@
 package de.metas.notification;
 
+import static j2html.TagCreator.body;
+import static j2html.TagCreator.br;
+import static j2html.TagCreator.html;
+
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -17,10 +21,6 @@ import org.adempiere.user.api.IUserDAO;
 import org.adempiere.util.lang.ITableRecordReference;
 import org.adempiere.util.lang.impl.TableRecordReference;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ecs.ClearElement;
-import org.apache.ecs.xhtml.body;
-import org.apache.ecs.xhtml.br;
-import org.apache.ecs.xhtml.html;
 import org.compiere.model.I_AD_Client;
 import org.compiere.util.Env;
 import org.slf4j.Logger;
@@ -44,7 +44,7 @@ import de.metas.notification.spi.impl.NullRecordTextProvider;
 import de.metas.ui.web.WebuiURLs;
 import de.metas.util.Check;
 import de.metas.util.Services;
-
+import j2html.tags.ContainerTag;
 import lombok.NonNull;
 
 /*
@@ -446,16 +446,17 @@ public class NotificationSenderTemplate
 
 	private String extractMailContent(final UserNotificationRequest request)
 	{
-		final body htmlBody = new body();
+		final ContainerTag htmlBody = body();
+
 		final String htmlBodyString = extractContentText(request, /* html */true);
 		if (!Check.isEmpty(htmlBodyString))
 		{
 			Splitter.on("\n")
 					.splitToList(htmlBodyString.trim())
-					.forEach(htmlLine -> htmlBody.addElement(new ClearElement(htmlLine)).addElement(new br()));
+					.forEach(htmlLine -> htmlBody.withText(htmlLine).with(br()));
 		}
 
-		return new html().addElement(htmlBody).toString();
+		return html(htmlBody).render();
 	}
 
 	private NotificationMessageFormatter prepareMessageFormatter(final UserNotificationRequest request)

@@ -34,9 +34,9 @@
 
 		<!-- used to build html strings in some legacy code such as GridWindow.java -->
 		<dependency>
-			<groupId>de.metas.adempiere.adempiere</groupId>
-			<artifactId>de.metas.adempiere.adempiere.patched-ecs</artifactId>
-			<version>${metasfresh.version}</version>
+			<groupId>com.j2html</groupId>
+			<artifactId>j2html</artifactId>
+			<version>1.3.0</version>
 		</dependency>
 
 		<dependency>

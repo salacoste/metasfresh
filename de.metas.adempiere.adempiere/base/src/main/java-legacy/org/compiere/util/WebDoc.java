@@ -74,9 +74,6 @@ public class WebDoc
 	public static final String	NBSP	= "&nbsp;";
 	
 	
-	/**************************************************************************
-	 *  Create new XHTML Document structure
-	 */
 	private WebDoc ()
 	{
 		super();

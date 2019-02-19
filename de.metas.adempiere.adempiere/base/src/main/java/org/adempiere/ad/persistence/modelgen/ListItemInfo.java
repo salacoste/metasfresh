@@ -1,8 +1,10 @@
 package org.adempiere.ad.persistence.modelgen;
 
-import org.adempiere.util.lang.ObjectUtils;
+import javax.annotation.Nullable;
 
-import de.metas.util.Check;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
 
 /**
  * AD_Ref_List related meta data.
@@ -10,44 +12,24 @@ import de.metas.util.Check;
  * @author tsa
  *
  */
+@Value
 class ListItemInfo
 {
 	private final String value;
 	private final String name;
 	private final String valueName;
+	private final String entityType;
 
-	public ListItemInfo(final String value, final String name, final String valueName)
+	@Builder
+	private ListItemInfo(
+			@NonNull final String value,
+			@NonNull final String name,
+			@Nullable final String valueName,
+			@NonNull final String entityType)
 	{
-		super();
-
-		Check.assumeNotNull(value, "value not null");
 		this.value = value;
-
-		Check.assumeNotEmpty(name, "name not empty");
 		this.name = name;
-
-		// ok to be null
 		this.valueName = valueName;
-	}
-
-	@Override
-	public String toString()
-	{
-		return ObjectUtils.toString(this);
-	}
-
-	public String getValue()
-	{
-		return value;
-	}
-
-	public String getName()
-	{
-		return name;
-	}
-
-	public String getValueName()
-	{
-		return valueName;
+		this.entityType = entityType;
 	}
 }

@@ -1,6 +1,8 @@
 package org.adempiere.ad.persistence.modelgen;
 
 import de.metas.util.Check;
+import lombok.Builder;
+import lombok.NonNull;
 
 /*
  * #%L
@@ -15,11 +17,11 @@ import de.metas.util.Check;
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public
- * License along with this program.  If not, see
+ * License along with this program. If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  * #L%
  */
@@ -32,17 +34,124 @@ import de.metas.util.Check;
  */
 public class ADRefListGenerator
 {
-	public static final ADRefListGenerator newInstance()
+	private final ListInfo listInfo;
+
+	private final String classColumnName;
+
+	private final String enumPackageName;
+	private final String enumClassname;
+
+	@Builder
+	private ADRefListGenerator(
+			@NonNull final ListInfo listInfo,
+			//
+			@NonNull final String classColumnName,
+			//
+			@NonNull final String enumPackageName,
+			@NonNull final String enumClassname)
 	{
-		return new ADRefListGenerator();
+		this.listInfo = listInfo;
+		//
+		this.classColumnName = classColumnName;
+		//
+		this.enumPackageName = enumPackageName;
+		this.enumClassname = enumClassname;
 	}
 
-	private String _columnName;
-	private ListInfo _listInfo;
-
-	private ADRefListGenerator()
+	public String generateEnum()
 	{
-		super();
+		final StringBuilder javaCode = new StringBuilder();
+		javaCode.append("package ").append(enumPackageName).append(";");
+
+		//
+		// Imports
+		javaCode.append("\n\n");
+		javaCode.append("\n").append("import java.util.Arrays;");
+		javaCode.append("\n").append("import org.adempiere.exceptions.AdempiereException;");
+		javaCode.append("\n").append("import com.google.common.collect.ImmutableMap;");
+		javaCode.append("\n").append("import com.google.common.collect.Maps;");
+		javaCode.append("\n").append("import lombok.NonNull;");
+		javaCode.append("\n").append("import de.metas.util.lang.ReferenceListAwareEnum;");
+
+		//
+		// Enum start
+		javaCode.append("\n\n");
+		javaCode.append("\n").append("public enum ").append(enumClassname).append("implements ReferenceListAwareEnum");
+		javaCode.append("\n{");
+
+		//
+		// Enum names
+		for (int i = 0, lastIndex = listInfo.getItems().size() - 1; i <= lastIndex; i++)
+		{
+			final ListItemInfo item = listInfo.getItems().get(i);
+
+			String name = createJavaName(item);
+			javaCode.append("\n\t").append(name).append("(\"").append(item.getValue()).append("\")");
+			if (i != lastIndex)
+			{
+				javaCode.append(", //");
+			}
+			else
+			{
+				javaCode.append("; //");
+			}
+		}
+
+		//
+		// AD_REFERENCE_ID constant
+		javaCode.append("\n\n");
+		javaCode.append("\n\t").append("public static final int AD_REFERENCE_ID=").append(listInfo.getAdReferenceId()).append(";");
+
+		//
+		// Fields
+		javaCode.append("\n\n");
+		javaCode.append("\n\t").append("private final String code");
+
+		//
+		// Constructor
+		javaCode.append("\n\n");
+		javaCode.append("\n\t").append("DeliveryRule(final String code)");
+		javaCode.append("\n\t").append("{");
+		javaCode.append("\n\t\t").append("this.code = code;");
+		javaCode.append("\n\t").append("}");
+
+		//
+		// Getter
+		javaCode.append("\n\n");
+		javaCode.append("\n\t").append("@Override");
+		javaCode.append("\n\t").append("public String getCode()");
+		javaCode.append("\n\t").append("{");
+		javaCode.append("\n\t\t").append("return code;");
+		javaCode.append("\n\t").append("}");
+
+		//
+		// Static factories
+		javaCode.append("\n");
+		javaCode.append("\n\t").append("public static DeliveryRule ofNullableCode(final String code)");
+		javaCode.append("\n\t").append("{");
+		javaCode.append("\n\t").append("\treturn code != null ? ofCode(code) : null;");
+		javaCode.append("\n\t").append("}");
+		//
+		javaCode.append("\n");
+		javaCode.append("\n\t").append("public static DeliveryRule ofCode(@NonNull final String code)");
+		javaCode.append("\n\t").append("{");
+		javaCode.append("\n\t\t").append("DeliveryRule type = typesByCode.get(code);");
+		javaCode.append("\n\t\t").append("if (type == null)");
+		javaCode.append("\n\t\t").append("{");
+		javaCode.append("\n\t\t\t").append("throw new AdempiereException(\"No \" + " + enumClassname + ".class.getName() + \" found for code: \" + code);");
+		javaCode.append("\n\t\t").append("}");
+		javaCode.append("\n\t\t").append("return type;");
+		javaCode.append("\n\t").append("}");
+		//
+		javaCode.append("\n");
+		javaCode.append("\n\t").append("private static final ImmutableMap<String, " + enumClassname + "> typesByCode = Maps.uniqueIndex(Arrays.asList(values()), " + enumClassname + "::getCode);");
+
+		//
+		// Enum end
+		javaCode.append("\n}");
+
+		//
+		return javaCode.toString();
 	}
 
 	/**
@@ -51,52 +160,52 @@ public class ADRefListGenerator
 	 * @return java constants. Example:
 	 *
 	 *         <pre>
-	 * public static final int NEXTACTION_AD_Reference_ID = 219;
-	 * public static final String NEXTACTION_None = &quot;N&quot;;
-	 * public static final String NEXTACTION_FollowUp = &quot;F&quot;;
-	 * </pre>
+	 *         public static final int NEXTACTION_AD_Reference_ID = 219;
+	 *         public static final String NEXTACTION_None = &quot;N&quot;;
+	 *         public static final String NEXTACTION_FollowUp = &quot;F&quot;;
+	 *         </pre>
 	 */
 	public String generateConstants()
 	{
-		final String columnName = getColumnName();
-		final String columnNameUC = columnName.toUpperCase();
-		final ListInfo listInfo = getListInfo();
-		final int AD_Reference_ID = listInfo.getAD_Reference_ID();
+		final String classColumnNameUC = classColumnName.toUpperCase();
+		final String enumClassnameFQ = enumPackageName + "." + enumClassname;
 
 		final String referenceName = listInfo.getName();
 
 		final StringBuilder javaCode = new StringBuilder();
 		javaCode.append("\n\t/** ")
-				.append("\n\t * ").append(columnName).append(" AD_Reference_ID=").append(AD_Reference_ID)
 				.append("\n\t * Reference name: ").append(referenceName)
 				.append("\n\t */")
-				.append("\n\tpublic static final int ").append(columnNameUC).append("_AD_Reference_ID=").append(AD_Reference_ID).append(";");
+				.append("\n\tpublic static final int ").append(classColumnNameUC).append("_AD_Reference_ID=").append(enumClassnameFQ).append(".AD_REFERENCE_ID").append(";");
 
 		//
 		for (final ListItemInfo item : listInfo.getItems())
 		{
-			final String value = item.getValue();
-
-			String name = item.getName();
-			// metas: 02827: begin
-			final String valueName = item.getValueName();
-			if (!Check.isEmpty(valueName, true))
-			{
-				name = valueName;
-			}
-			// metas: 02827: end
-
-			final String nameClean = createJavaName(name);
-			javaCode.append("\n\t/** ").append(name).append(" = ").append(value).append(" */");
-			javaCode.append("\n\tpublic static final String ").append(columnNameUC)
-					.append("_").append(nameClean)
-					.append(" = \"").append(value).append("\";");
+			final String name = createJavaName(item);
+			javaCode.append("\n\tpublic static final String ")
+					.append(classColumnNameUC).append("_").append(name)
+					.append(" = ")
+					// .append("\"").append(value).append("\"")
+					.append(enumClassnameFQ).append(".").append(name)
+					.append(";");
 		}
 
 		return javaCode.toString();
 	}
 
-	private final String createJavaName(final String name)
+	private static final String createJavaName(final ListItemInfo item)
+	{
+		String name = item.getName();
+		final String valueName = item.getValueName();
+		if (!Check.isEmpty(valueName, true))
+		{
+			name = valueName;
+		}
+
+		return createJavaName(name);
+	}
+
+	private static final String createJavaName(final String name)
 	{
 		final char[] nameArray = name.toCharArray();
 		final StringBuilder nameClean = new StringBuilder();
@@ -196,29 +305,5 @@ public class ADRefListGenerator
 		}
 
 		return nameClean.toString();
-	}
-
-	public ADRefListGenerator setColumnName(final String columnName)
-	{
-		_columnName = columnName;
-		return this;
-	}
-
-	private final String getColumnName()
-	{
-		Check.assumeNotEmpty(_columnName, "_columnName not empty");
-		return _columnName;
-	}
-
-	public ADRefListGenerator setListInfo(final ListInfo listInfo)
-	{
-		Check.assumeNotNull(listInfo, "listInfo not null");
-		_listInfo = listInfo;
-		return this;
-	}
-
-	private ListInfo getListInfo()
-	{
-		return _listInfo;
 	}
 }

@@ -1,40 +1,37 @@
 /**********************************************************************
- * This file is part of Adempiere ERP Bazaar                           *
- * http://www.adempiere.org                                            *
- *                                                                     *
- * Copyright (C) Trifon Trifonov.                                      *
- * Copyright (C) Contributors                                          *
- *                                                                     *
- * This program is free software, you can redistribute it and/or       *
- * modify it under the terms of the GNU General Public License         *
- * as published by the Free Software Foundation, either version 2      *
- * of the License, or (at your option) any later version.              *
- *                                                                     *
- * This program is distributed in the hope that it will be useful,     *
- * but WITHOUT ANY WARRANTY, without even the implied warranty of      *
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the        *
- * GNU General Public License for more details.                        *
- *                                                                     *
- * You should have received a copy of the GNU General Public License   *
- * along with this program, if not, write to the Free Software         *
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,          *
- * MA 02110-1301, USA.                                                 *
- *                                                                     *
- * Contributors:                                                       *
- * - Trifon Trifonov (trifonnt@users.sourceforge.net)                  *
- * - Teo Sarca (teo.sarca@arhipac.ro)                                  *
- *                                                                     *
- * Sponsors:                                                           *
- * - Company (http://www.d3-soft.com)                                  *
- * - ARHIPAC (http://www.arhipac.ro)                                   *
+ * This file is part of Adempiere ERP Bazaar *
+ * http://www.adempiere.org *
+ * *
+ * Copyright (C) Trifon Trifonov. *
+ * Copyright (C) Contributors *
+ * *
+ * This program is free software, you can redistribute it and/or *
+ * modify it under the terms of the GNU General Public License *
+ * as published by the Free Software Foundation, either version 2 *
+ * of the License, or (at your option) any later version. *
+ * *
+ * This program is distributed in the hope that it will be useful, *
+ * but WITHOUT ANY WARRANTY, without even the implied warranty of *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the *
+ * GNU General Public License for more details. *
+ * *
+ * You should have received a copy of the GNU General Public License *
+ * along with this program, if not, write to the Free Software *
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, *
+ * MA 02110-1301, USA. *
+ * *
+ * Contributors: *
+ * - Trifon Trifonov (trifonnt@users.sourceforge.net) *
+ * - Teo Sarca (teo.sarca@arhipac.ro) *
+ * *
+ * Sponsors: *
+ * - Company (http://www.d3-soft.com) *
+ * - ARHIPAC (http://www.arhipac.ro) *
  **********************************************************************/
 
 package org.adempiere.ad.persistence.modelgen;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -61,39 +58,49 @@ import de.metas.adempiere.service.IColumnBL;
 import de.metas.logging.LogManager;
 import de.metas.util.Check;
 import de.metas.util.Services;
+import lombok.NonNull;
 
 /**
  * @author Trifon Trifonov
  * @version $Id$
  * 
- * @author Teo Sarca, SC ARHIPAC SERVICE SRL <li>BF [ 1781629 ] Don't use Env.NL in model class/interface generators <li>FR [ 1781630 ] Generated class/interfaces have a lot of unused imports <li>BF [
- *         1781632 ] Generated class/interfaces should be UTF-8 <li>better formating of generated source <li>BF [ 1787833 ] ModelInterfaceGenerator: don't write timestamp <li>FR [ 1803309 ] Model
- *         generator: generate get method for Search cols <li>BF [ 1817768 ] Isolate hardcoded table direct columns https://sourceforge.net/tracker/?func=detail&atid=879332&aid=1817768&group_id=176962
- *         <li>FR [ 2343096 ] Model Generator: Improve Reference Class Detection <li>BF [ 2528434 ] ModelInterfaceGenerator: generate getters for common fields <li>-- <li>FR [ 2848449 ]
+ * @author Teo Sarca, SC ARHIPAC SERVICE SRL
+ *         <li>BF [ 1781629 ] Don't use Env.NL in model class/interface generators
+ *         <li>FR [ 1781630 ] Generated class/interfaces have a lot of unused imports
+ *         <li>BF [
+ *         1781632 ] Generated class/interfaces should be UTF-8
+ *         <li>better formating of generated source
+ *         <li>BF [ 1787833 ] ModelInterfaceGenerator: don't write timestamp
+ *         <li>FR [ 1803309 ] Model
+ *         generator: generate get method for Search cols
+ *         <li>BF [ 1817768 ] Isolate hardcoded table direct columns https://sourceforge.net/tracker/?func=detail&atid=879332&aid=1817768&group_id=176962
+ *         <li>FR [ 2343096 ] Model Generator: Improve Reference Class Detection
+ *         <li>BF [ 2528434 ] ModelInterfaceGenerator: generate getters for common fields
+ *         <li>--
+ *         <li>FR [ 2848449 ]
  *         ModelClassGenerator: Implement model getters https://sourceforge.net/tracker/?func=detail&atid=879335&aid=2848449&group_id=176962
- * @author Teo Sarca, teo.sarca@gmail.com <li>FR [ 3020635 ] Model Generator should use FQ class names https://sourceforge.net/tracker/?func=detail&aid=3020635&group_id=176962&atid=879335
- * @author Victor Perez, e-Evolution <li>FR [ 1785001 ] Using ModelPackage of EntityType to Generate Model Class
+ * @author Teo Sarca, teo.sarca@gmail.com
+ *         <li>FR [ 3020635 ] Model Generator should use FQ class names https://sourceforge.net/tracker/?func=detail&aid=3020635&group_id=176962&atid=879335
+ * @author Victor Perez, e-Evolution
+ *         <li>FR [ 1785001 ] Using ModelPackage of EntityType to Generate Model Class
  */
 public class ModelInterfaceGenerator
 {
-	private String packageName = "";
+	private static final transient Logger log = LogManager.getLogger(ModelInterfaceGenerator.class);
 
 	public static final String NL = "\n";
 
-	/** File Header */
-	public static final String COPY = "";
-	// NOTE: we are not appending ANY license to generated files because we assume this will be done automatically by a maven plugin.
-
-	/** Logger */
-	private static final transient Logger log = LogManager.getLogger(ModelInterfaceGenerator.class);
+	private String packageName = "";
+	private Collection<String> s_importClasses = new TreeSet<>();
 
 	private static final String DEPRECATED_MSG_SetterForVirtualColumn = "Please don't use it because this is a virtual column";
 	private static final String DEPRECATED_MSG_GetterForLazyLoadingColumn = "Please don't use it because this is a lazy loading column and it might affect the performances";
 
-	public ModelInterfaceGenerator(final TableInfo tableInfo, String directory, String packageName)
+	public ModelInterfaceGenerator(
+			@NonNull final TableInfo tableInfo,
+			@NonNull File directory,
+			@NonNull String packageName)
 	{
-		super();
-
 		// this.repository = repository;
 		this.packageName = packageName;
 
@@ -101,19 +108,8 @@ public class ModelInterfaceGenerator
 		final StringBuilder mandatory = new StringBuilder();
 		final StringBuilder sb = createColumns(tableInfo, mandatory);
 
-		// Header
-		String tableName = createHeader(tableInfo, sb, mandatory);
-
-		// Save
-		if (directory.endsWith("/") || directory.endsWith("\\"))
-		{
-
-		}
-		else
-		{
-			directory = directory + "/";
-		}
-		writeToFile(sb, directory + tableName + ".java");
+		final String classname = createHeader(tableInfo, sb, mandatory);
+		ModelGeneratorUtils.writeJavaClassToFile(sb, directory, classname);
 	}
 
 	/**
@@ -134,7 +130,6 @@ public class ModelInterfaceGenerator
 		String className = "I_" + tableName;
 		//
 		StringBuilder start = new StringBuilder()
-				.append(COPY)
 				.append("package ").append(packageName).append(";").append(NL);
 
 		// if (!packageName.equals("org.compiere.model")) {
@@ -147,31 +142,26 @@ public class ModelInterfaceGenerator
 		// Interface
 		start.append("/** Generated Interface for ").append(tableName).append("\n")
 				.append(" *  @author Adempiere (generated) \n")
-				// .append(" *  @version ").append(Adempiere.MAIN_VERSION).append(NL) //.append(" - ").append(s_run).append("\n") // metas: don't generate it because it is changing on each rollout
+				// .append(" * @version ").append(Adempiere.MAIN_VERSION).append(NL) //.append(" - ").append(s_run).append("\n") // metas: don't generate it because it is changing on each rollout
 				.append(" */\n")
 				.append("@SuppressWarnings(\"javadoc\")\n") // metas
 				.append("public interface ").append(className).append(" {").append("\n")
 
-				.append("    /** TableName=").append(tableName).append(" */\n")
-				.append("    public static final String Table_Name = \"").append(tableName).append("\";\n")
+				.append("\t/** TableName=").append(tableName).append(" */\n")
+				.append("\tpublic static final String Table_Name = \"").append(tableName).append("\";\n")
 
-				.append("    /** AD_Table_ID=").append(tableInfo.getAD_Table_ID()).append(" */\n")
+				.append("\t/** AD_Table_ID=").append(tableInfo.getAdTableId()).append(" */\n")
 				.append(isGenerateLegacy() ? "" : "//") // metas
-				.append("    public static final int Table_ID = org.compiere.model.MTable.getTable_ID(Table_Name);\n")
+				.append("\tpublic static final int Table_ID = org.compiere.model.MTable.getTable_ID(Table_Name);\n")
 
-				// .append("    protected KeyNamePair Model = new KeyNamePair(Table_ID, Table_Name);\n")
+				// .append(" protected KeyNamePair Model = new KeyNamePair(Table_ID, Table_Name);\n")
 				.append(isGenerateLegacy() ? "" : "//") // metas
-				.append("    org.compiere.util.KeyNamePair Model = new org.compiere.util.KeyNamePair(Table_ID, Table_Name);\n") // INFO - Should this be here???
+				.append("\torg.compiere.util.KeyNamePair Model = new org.compiere.util.KeyNamePair(Table_ID, Table_Name);\n") // INFO - Should this be here???
 
-				.append("    /** AccessLevel = ").append(accessLevel.getDescription()).append("\n")
-				.append("     */\n")
-				// .append("    protected BigDecimal AccessLevel = new BigDecimal(").append(accessLevel).append(");\n")
+				.append("\t/** AccessLevel = ").append(accessLevel.getDescription()).append(" */\n")
+				// .append(" protected BigDecimal AccessLevel = new BigDecimal(").append(accessLevel).append(");\n")
 				.append(isGenerateLegacy() ? "" : "//") // metas
-				.append("    java.math.BigDecimal accessLevel = java.math.BigDecimal.valueOf(").append(accessLevel.getAccessLevelInt()).append(");\n") // INFO - Should this be here???
-
-				.append("    /** Load Meta Data */\n")
-		// .append("    protected POInfo initPO (Properties ctx);")
-		// .append("    POInfo initPO (Properties ctx);") // INFO - Should this be here???
+				.append("\tjava.math.BigDecimal accessLevel = java.math.BigDecimal.valueOf(").append(accessLevel.getAccessLevelInt()).append(");\n") // INFO - Should this be here???
 		;
 
 		StringBuilder end = new StringBuilder("}");
@@ -219,8 +209,8 @@ public class ModelInterfaceGenerator
 					.append(", ").append(referenceClassName == null ? "Object" : referenceClassName)
 					.append(">");
 
-			sb.append("    /** Column definition for ").append(columnName).append(" */\n")
-					.append("    public static final ").append(modelColumnClassname).append(" COLUMN_").append(columnName)
+			sb.append("\t/** Column definition for ").append(columnName).append(" */\n")
+					.append("\tpublic static final ").append(modelColumnClassname).append(" COLUMN_").append(columnName)
 					//
 					// e.g. new ModelColumn<I_C_Invoice, I_C_BPartner>
 					.append(" = new ").append(modelColumnClassname)
@@ -230,14 +220,13 @@ public class ModelInterfaceGenerator
 					.append(modelClassname).append(".class")
 					.append(", \"").append(columnName).append("\"")
 					.append(", ").append(referenceClassName == null ? "null" : referenceClassName + ".class")
-					.append(");");
-			;
+					.append(");");;
 		}
 
 		//
 		// Add: COLUMNNAME_ColumnName = ...
-		sb.append("    /** Column name ").append(columnName).append(" */\n")
-				.append("    public static final String COLUMNNAME_").append(columnName)
+		sb.append("\t/** Column name ").append(columnName).append(" */\n")
+				.append("\tpublic static final String COLUMNNAME_").append(columnName)
 				.append(" = \"").append(columnName).append("\";");
 
 		return sb.toString();
@@ -266,7 +255,7 @@ public class ModelInterfaceGenerator
 			{
 				deprecatedSetter = DEPRECATED_MSG_SetterForVirtualColumn;
 			}
-			
+
 			// Create Java Comment
 			generateJavaComment(sb, columnInfo, "Set", deprecatedSetter);
 			appendDeprecatedIfNotNull(sb, deprecatedSetter);
@@ -282,7 +271,7 @@ public class ModelInterfaceGenerator
 			{
 				deprecatedGetter = DEPRECATED_MSG_GetterForLazyLoadingColumn;
 			}
-			
+
 			generateJavaComment(sb, columnInfo, "Get", deprecatedGetter);
 			appendDeprecatedIfNotNull(sb, deprecatedGetter);
 			sb.append("\tpublic ").append(dataType);
@@ -333,7 +322,7 @@ public class ModelInterfaceGenerator
 					{
 						deprecatedSetter = DEPRECATED_MSG_SetterForVirtualColumn;
 					}
-					
+
 					sb.append("\n");
 					appendDeprecatedIfNotNull(sb, deprecatedSetter);
 					sb.append("\tpublic void set" + fieldName + "(" + referenceClassName + " " + fieldName + ");");
@@ -398,7 +387,7 @@ public class ModelInterfaceGenerator
 		{
 			result.append(" (lazy loading)");
 		}
-		
+
 		if (deprecated != null)
 		{
 			result.append("\n\t * @deprecated ").append(deprecated);
@@ -407,70 +396,16 @@ public class ModelInterfaceGenerator
 		//
 		result.append("\n\t */\n");
 	}
-	
+
 	private void appendDeprecatedIfNotNull(final StringBuilder result, final String deprecated)
 	{
 		if (deprecated == null)
 		{
 			return;
 		}
-		
+
 		result.append("\t@Deprecated\n");
 	}
-
-	/*
-	 * Write to file
-	 * 
-	 * @param sb string buffer
-	 * 
-	 * @param fileName file name
-	 */
-	private void writeToFile(StringBuilder sb, String fileName)
-	{
-		try
-		{
-			File out = new File(fileName);
-			// metas: begin: make sure directory exists
-			out.getParentFile().mkdirs();
-			// metas: end
-			Writer fw = new OutputStreamWriter(new FileOutputStream(out, false), "UTF-8");
-			for (int i = 0; i < sb.length(); i++)
-			{
-				char c = sb.charAt(i);
-				// after
-				if (c == ';' || c == '}')
-				{
-					fw.write(c);
-					if (sb.substring(i + 1).startsWith("//"))
-						fw.write('\t');
-					else
-						fw.write(NL);
-				}
-				// before & after
-				else if (c == '{')
-				{
-					fw.write(NL);
-					fw.write(c);
-					fw.write(NL);
-				}
-				else
-					fw.write(c);
-			}
-			fw.flush();
-			fw.close();
-			float size = out.length();
-			size /= 1024;
-			log.info(out.getAbsolutePath() + " - " + size + " kB");
-		}
-		catch (Exception ex)
-		{
-			log.error(fileName, ex);
-			throw new RuntimeException(ex);
-		}
-	}
-
-	/** Import classes */
-	private Collection<String> s_importClasses = new TreeSet<>();
 
 	/**
 	 * Add class name to class import list

@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import org.adempiere.ad.persistence.EntityTypesCache;
+import org.adempiere.ad.persistence.modelgen.ListInfo.ListInfoBuilder;
+import org.adempiere.ad.persistence.modelgen.TableInfo.TableInfoBuilder;
 import org.adempiere.ad.security.TableAccessLevel;
 import org.adempiere.ad.trx.api.ITrx;
 import org.adempiere.exceptions.AdempiereException;
@@ -39,10 +41,11 @@ import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 
 import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+
+import de.metas.util.StringUtils;
 
 /**
  * Repository of {@link TableInfo}s, {@link ListInfo}s, {@link TableReferenceInfo}s.
@@ -66,7 +69,7 @@ public class TableAndColumnInfoRepository
 			.build(new CacheLoader<Integer, Optional<ListInfo>>()
 			{
 				@Override
-				public Optional<ListInfo> load(final Integer adReferenceId) throws Exception
+				public Optional<ListInfo> load(final Integer adReferenceId)
 				{
 					return loadListInfo(adReferenceId);
 				}
@@ -88,21 +91,26 @@ public class TableAndColumnInfoRepository
 		{
 			return tableInfos.get(adTableId);
 		}
-		catch (ExecutionException e)
+		catch (ExecutionException ex)
 		{
-			throw Throwables.propagate(e);
+			throw AdempiereException.wrapIfNeeded(ex);
 		}
 	}
 
 	public Optional<ListInfo> getListInfo(final int adReferenceId)
 	{
+		if (adReferenceId <= 0)
+		{
+			return Optional.absent();
+		}
+
 		try
 		{
 			return listInfos.get(adReferenceId);
 		}
-		catch (ExecutionException e)
+		catch (ExecutionException ex)
 		{
-			throw Throwables.propagate(e);
+			throw AdempiereException.wrapIfNeeded(ex);
 		}
 	}
 
@@ -112,15 +120,15 @@ public class TableAndColumnInfoRepository
 		{
 			return tableReferenceInfos.get(adReferenceId);
 		}
-		catch (ExecutionException e)
+		catch (ExecutionException ex)
 		{
-			throw Throwables.propagate(e);
+			throw AdempiereException.wrapIfNeeded(ex);
 		}
 	}
 
 	private TableInfo loadTableInfos(final int adTableId)
 	{
-		TableInfo.Builder tableInfoBuilder = null;
+		TableInfoBuilder tableInfoBuilder = null;
 		final Map<String, ColumnInfo> columnName2columnInfos = new LinkedHashMap<>();
 
 		final String sql = "SELECT c.ColumnName, c.IsUpdateable, c.IsMandatory," // 1..3
@@ -132,6 +140,7 @@ public class TableAndColumnInfoRepository
 				+ ", c.IsIdentifier" // 20
 				+ ", t.AccessLevel" // 21
 				+ ", c.IsLazyLoading" // 22
+				+ ", t.EntityType as TableEntityType" // 23
 				+ " FROM AD_Column c "
 				+ " INNER JOIN AD_Table t ON (t.AD_Table_ID=c.AD_Table_ID)"
 				+ " WHERE c.AD_Table_ID=?"
@@ -156,8 +165,8 @@ public class TableAndColumnInfoRepository
 			{
 				final String tableName = rs.getString("TableName"); // i.e. 18
 				String columnName = rs.getString(1);
-				boolean isUpdateable = "Y".equals(rs.getString(2));
-				boolean isMandatory = "Y".equals(rs.getString(3));
+				boolean isUpdateable = StringUtils.toBoolean(rs.getString(2));
+				boolean isMandatory = StringUtils.toBoolean(rs.getString(3));
 				int displayType = rs.getInt(4);
 				int AD_Reference_Value_ID = rs.getInt(5);
 				String defaultValue = rs.getString(6);
@@ -172,19 +181,21 @@ public class TableAndColumnInfoRepository
 				String ColumnSQL = rs.getString(15);
 				boolean virtualColumn = ColumnSQL != null
 						&& ColumnSQL.length() > 0;
-				boolean IsEncrypted = "Y".equals(rs.getString(16));
-				boolean IsKey = "Y".equals(rs.getString(17));
+				boolean IsEncrypted = StringUtils.toBoolean(rs.getString(16));
+				boolean IsKey = StringUtils.toBoolean(rs.getString(17));
 				final int seqNo = rs.getInt("SeqNo"); // i.e. 19
-				final boolean isIdentifier = "Y".equals(rs.getString("IsIdentifier")); // i.e. 20
+				final boolean isIdentifier = StringUtils.toBoolean(rs.getString("IsIdentifier")); // i.e. 20
 
 				if (tableInfoBuilder == null)
 				{
 					final TableAccessLevel accessLevel = TableAccessLevel.forAccessLevel(rs.getInt("AccessLevel")); // i.e. 21
+					final String tableEntityType = rs.getString("TableEntityType"); // i.e. 23
 
 					tableInfoBuilder = TableInfo.builder()
-							.setTableName(tableName)
-							.setAD_Table_ID(adTableId)
-							.setAccessLevel(accessLevel);
+							.tableName(tableName)
+							.adTableId(adTableId)
+							.accessLevel(accessLevel)
+							.entityType(tableEntityType);
 				}
 
 				final boolean isLazyLoading = DisplayType.toBoolean(rs.getString("IsLazyLoading")); // 22
@@ -237,7 +248,7 @@ public class TableAndColumnInfoRepository
 		// }
 
 		return tableInfoBuilder
-				.setColumnInfos(columnName2columnInfos.values())
+				.columnInfos(columnName2columnInfos.values())
 				.build();
 	}
 
@@ -264,24 +275,26 @@ public class TableAndColumnInfoRepository
 
 	private final Optional<ListInfo> loadListInfo(final int adReferenceId)
 	{
-		ListInfo.Builder listInfoBuilder = null;
-
 		final String sql = "SELECT "
 				+ " r.Name as ReferenceName"
+				+ ", r.EntityType as ReferenceEntityType"
 				+ ", rl.Value"
 				+ ", rl.Name"
-				+ ", rl.ValueName" // metas: 02827: added ValueName
+				+ ", rl.ValueName"
+				+ ", rl.EntityType"
 				+ ", rl.AD_Ref_List_ID"
 				+ " FROM AD_Reference r "
 				+ " LEFT OUTER JOIN AD_Ref_List rl ON (rl.AD_Reference_ID=r.AD_Reference_ID) "
 				+ " WHERE r.AD_Reference_ID=?"
-				+ " ORDER BY rl.AD_Ref_List_ID";
+				+ " ORDER BY rl.AD_Ref_List_ID"; // to have a predictable order and avoid random/irrelevant file changes
 		final Object[] sqlParams = new Object[] { adReferenceId };
 
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
 		try
 		{
+			ListInfoBuilder listInfoBuilder = null;
+
 			pstmt = DB.prepareStatement(sql, ITrx.TRXNAME_None);
 			DB.setParameters(pstmt, sqlParams);
 			rs = pstmt.executeQuery();
@@ -289,26 +302,36 @@ public class TableAndColumnInfoRepository
 			{
 				if (listInfoBuilder == null)
 				{
-					final String referenceName = rs.getString("ReferenceName");
-
 					listInfoBuilder = ListInfo.builder()
-							.setAD_Reference_ID(adReferenceId)
-							.setName(referenceName);
+							.adReferenceId(adReferenceId)
+							.name(rs.getString("ReferenceName"))
+							.entityType(rs.getString("ReferenceEntityType"));
 				}
 
 				final int AD_Ref_List_ID = rs.getInt("AD_Ref_List_ID");
 				if (AD_Ref_List_ID > 0)
 				{
-					final String value = rs.getString("Value");
-					final String name = rs.getString("Name");
-					final String valueName = rs.getString("ValueName");
-					listInfoBuilder.addItem(value, name, valueName);
+					listInfoBuilder.item(ListItemInfo.builder()
+							.value(rs.getString("Value"))
+							.name(rs.getString("Name"))
+							.valueName(rs.getString("ValueName"))
+							.entityType(rs.getString("EntityType"))
+							.build());
 				}
 			}
+
+			if (listInfoBuilder == null)
+			{
+				return Optional.absent();
+			}
+			else
+			{
+				return Optional.of(listInfoBuilder.build());
+			}
 		}
-		catch (SQLException e)
+		catch (final SQLException ex)
 		{
-			throw new DBException(e, sql, sqlParams);
+			throw new DBException(ex, sql, sqlParams);
 		}
 		finally
 		{
@@ -316,13 +339,6 @@ public class TableAndColumnInfoRepository
 			rs = null;
 			pstmt = null;
 		}
-
-		if (listInfoBuilder == null)
-		{
-			return Optional.absent();
-		}
-
-		return Optional.of(listInfoBuilder.build());
 	}
 
 	public Optional<TableReferenceInfo> loadTableReferenceInfo(final int adReferenceId)
@@ -348,7 +364,7 @@ public class TableAndColumnInfoRepository
 				final String refTableName = rs.getString(1);
 				final String entityType = rs.getString(2);
 				final int refDisplayType = rs.getInt(3);
-				final boolean refIsKey = "Y".equals(rs.getString("IsKey"));
+				final boolean refIsKey = StringUtils.toBoolean(rs.getString("IsKey"));
 				final int keyReferenceValueId = rs.getInt("Key_Reference_Value_ID");
 
 				final TableReferenceInfo tableReferenceInfo = new TableReferenceInfo(refTableName, refDisplayType, entityType, refIsKey, keyReferenceValueId);

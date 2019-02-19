@@ -78,7 +78,7 @@ public class GenerateModel
 		return modelPackage;
 	}
 	
-	public static final String getModelDirectory(String srcDirectory, String packageName)
+	public static final File getModelDirectory(String srcDirectory, String packageName)
 	{
 		File directoryFile;
 		if (Check.isEmpty(srcDirectory, true) || "-".equals(srcDirectory.trim()))
@@ -100,8 +100,9 @@ public class GenerateModel
 		{
 			directoryFile = new File(directoryFile, packageName.replace(".", "/"));
 		}
+		
 //		directoryFile.mkdirs();
-		return directoryFile.getAbsolutePath()+File.separator;
+		return directoryFile;
 	}
 
 
@@ -127,25 +128,25 @@ public class GenerateModel
 		
 		//
 		// Parameter 1: Output directory
-		String directory = null;
+		String directoryStr = null;
 		if (args.length > 0)
 		{
 			final String directoryArg = args[0];
 			if("-".equals(directoryArg))
 			{
-				directory = directoryArg;
+				directoryStr = directoryArg;
 			}
 			else
 			{
-				directory = new File(directoryArg).getAbsolutePath();
+				directoryStr = new File(directoryArg).getAbsolutePath();
 			}
 		}
-		if (directory == null || directory.length() == 0)
+		if (directoryStr == null || directoryStr.isEmpty())
 		{
 			System.err.println("No Output Directory");
 			System.exit(1);
 		}
-		log.info("Output Directory: " + directory);
+		log.info("Output Directory: {}", directoryStr);
 
 		//
 		// Parameter 2: Package Name
@@ -223,21 +224,21 @@ public class GenerateModel
 				final int adTableId = rs.getInt(1);
 				
 				final String packageNameFinal;
-				final String directoryFinal;
+				final File directory;
 				if (packageName.equals("-"))
 				{
 					packageNameFinal = getModelPackage(adTableId);
-					directoryFinal = getModelDirectory(directory, packageNameFinal);
+					directory = getModelDirectory(directoryStr, packageNameFinal);
 				}
 				else
 				{
 					packageNameFinal = packageName;
-					directoryFinal = directory;
+					directory = new File(directoryStr);
 				}
 
 				final TableInfo tableInfo = repository.getTableInfo(adTableId);
-				new ModelInterfaceGenerator(tableInfo, directoryFinal, packageNameFinal);
-				new ModelClassGenerator(tableInfo, directoryFinal, packageNameFinal);
+				new ModelInterfaceGenerator(tableInfo, directory, packageNameFinal);
+				new ModelClassGenerator(tableInfo, directory, packageNameFinal);
 				count++;
 			}
  		}

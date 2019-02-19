@@ -255,6 +255,7 @@ public class ProductPrices
 		}
 
 		pp.setM_PriceList_Version(plv);
+		pp.setSeqNo(10);
 		pp.setM_Product_ID(ppRequest.getProductId());
 		pp.setPriceLimit(price);
 		pp.setPriceList(price);

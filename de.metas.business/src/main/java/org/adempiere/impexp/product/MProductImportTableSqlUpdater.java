@@ -463,6 +463,7 @@ public class MProductImportTableSqlUpdater
 				.append(" and pl.AD_Client_ID=?")
 				.append(" and pl.IsActive='Y' order by pl.M_PriceList_ID limit 1)")
 				.append(" where true")
+				.append(" and " + nameToMatch + " is null ")
 				.append(" and " + COLUMNNAME_I_IsImported + "<>'Y'")
 				.append(whereClause);
 		final Object[] params = new Object[]{nameToMatch, adClientId};
